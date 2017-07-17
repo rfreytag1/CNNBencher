@@ -1,0 +1,69 @@
+{
+	"benchmark_name": "Test01",
+	"stages": 10,
+	"runs": 5,	
+	"datasets": [
+		{
+			"filename": "test01.zip",
+			"sample_size": 5000,
+			"classes": 1500
+		},
+		{
+			"filename": "test02.zip",
+			"sample_size": 10000,
+			"classes": 1600
+		}
+	],
+	"param_change": {
+		"selection": "ordered" # "ordered", "all", "random", "roundrobin"
+	},
+	"cnn_configurations": [
+		{
+			"cnn_name": "TestCNN01",
+			"layers": [
+				{
+					"type": "data_in", # "data_in", "convolution", "pooling", "fc"
+					"params": [
+						{
+							"key": "batch_size",
+							"type": "static", # "static", "stepped", "linear", "cosine", "cubic", "multi", "multi-random"
+							"value": 64
+						}
+					]
+				},
+				{
+					"type": "convolution",
+					"params": [
+						{
+							"key": "kernel_size",
+							"type": "static",
+							"value": 3
+						},
+						{
+							"key": "kernels",
+							"type": "stepped",
+							"start": 32,
+							"end": 96,
+							"step": 16
+						},
+						{
+							"key": "dimensions",
+							"type": "multi",
+							"values": [ 16, 32, 46, 64 ]
+						}
+					]
+				},
+				{
+					"type": "pooling",
+					"params": [
+						{
+							"key": "type",
+							"type": "static",
+							"value": "max"
+						}
+					]
+				}
+			]
+		}
+	]
+}
