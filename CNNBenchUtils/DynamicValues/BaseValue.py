@@ -1,7 +1,17 @@
+# TODO: implement Value Sets? e.g. v.value(stagenum, setnum)
+
+
 class BaseValue:
-    def __init__(self, stages=0):
+    def __init__(self, val=None, stages=0):
         self.stages = stages
         self.locked = True
+        self.val = val
+
+    def __str__(self):
+        return str(self.val)
+
+    def __repr__(self):
+        return str(self.val)
 
     def value(self, stage):
         raise NotImplementedError()

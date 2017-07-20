@@ -15,9 +15,9 @@
 		}
 	],
 	"param_change": {
-		"selection": "ordered" // "ordered", "all", "random", "roundrobin"
+		"selection": "ordered"
 	},
-	"dataset_augmentations": { // still not sure about this, might get too complex. Seperate thing?
+	"dataset_augmentations": {
 
 	},
 	"cnn_configurations": [
@@ -25,11 +25,11 @@
 			"cnn_name": "TestCNN01",
 			"layers": [
 				{
-					"type": "data_in", // "data_in", "convolution", "pooling", "dense"
+					"type": "data_in",
 					"params": [
 						{
 							"key": "batch_size",
-							"type": "static", // "static", "stepped", "linear", "cosine", "multi", "multi-rr", "multi-random"
+							"type": "static",
 							"value": 64
 						}
 					]
@@ -62,7 +62,7 @@
 						{
 							"key": "type",
 							"type": "static",
-							"value": "max" // for maxpooling
+							"value": "max"
 						}
 					]
 				}

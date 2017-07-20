@@ -1,4 +1,4 @@
-from CNNBenchUtils.value_selectors.BaseValueSelector import BaseValueSelector
+from CNNBenchUtils.ValueSelectors.BaseValueSelector import BaseValueSelector
 
 
 class RandomValueSelector(BaseValueSelector):

@@ -1,4 +1,4 @@
-from CNNBenchUtils.dynamic_values.BaseValue import BaseValue
+from CNNBenchUtils.DynamicValues.BaseValue import BaseValue
 
 
 class BaseValueSelector:
