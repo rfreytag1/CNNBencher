@@ -53,7 +53,7 @@
 					"type": "conv",
 					"params": [
 						{
-							"key": "kernel_size", //"kernel_size", "kernels", "pad", "stride", "nonlinearity", "weights.type", "weights.gain", "weights.stddev", "weights.mean", "weights.range"
+							"key": "kernel_size", //"kernel_size", "type", "kernels", "pad", "stride", "nonlinearity", "weights.type", "weights.gain", "weights.stddev", "weights.mean", "weights.range"
 							"type": "static",
 							"value": 3
 						},
@@ -63,6 +63,11 @@
 							"start": 32,
 							"end": 96,
 							"step": 16
+						},
+						{
+							"key": "type",
+							"type": "static",
+							"value": "conv2d"
 						},
 						{
 							"key": "weights.type",

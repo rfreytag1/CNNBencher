@@ -23,40 +23,230 @@ def input_layer_builder(net, layer, stage=0):
     return l.InputLayer((batch_size, channels, width, height))
 
 
-def conv_layer_builder(net, layer, stage=0):
-    conv_type = CNNBenchNetBuilder.getdval_str(layer['params'].get('type'), stage).lower()
-    kernels = CNNBenchNetBuilder.getdval_int(layer['params'].get('kernels'), stage, 2)
-    kernel_size = CNNBenchNetBuilder.getdval_int(layer['params'].get('kernel_size'), stage, 3)
-    pad = CNNBenchNetBuilder.getdval_str(layer['params'].get('pad'), stage, 'same')
-    stride = CNNBenchNetBuilder.getdval_int(layer['params'].get('stride'), stage, 2)
-    nonlinearity_type = CNNBenchNetBuilder.getdval_str(layer['params'].get('nonlinearity'), stage).lower()
-    weights_type = CNNBenchNetBuilder.getdval_str(layer['params'].get('weigths.type'), stage).lower()
+class BaseWeightInitFactory:
+    standard_weights_init = {
+        'constant': init.Constant,
+        'uniform': init.Uniform,
+        'normal': init.Normal,
+        'henormal': init.HeNormal,
+        'heuniform': init.HeUniform,
+        'glorotnormal': init.GlorotNormal,
+        'glorotuniform': init.GlorotUniform,
+        'sparse': init.Sparse,
+        'ortho': init.Orthogonal
+    }
 
-    nonlinearity = None
-    weights = None
+    '''
+    create instance of desired weight initializer with sane defaults if no parameters were passed 
+    '''
+    @staticmethod
+    def instance(wtype, value=None, gain=None, stddev=None, mean=None, nrange=None, sparsity=None):
+        pass
 
-    if nonlinearity_type == 'elu':
-        nonlinearity = nonlinearities.elu
-    else:
-        nonlinearity = nonlinearities.elu
 
-    if weights_type == 'henormal':
-        weights_gain = CNNBenchNetBuilder.getdval_float(layer['params'].get('stride'), stage, 1.0)
-        weights = init.HeNormal(gain=weights_gain)
-    else:
-        weights = init.Normal()
+class ConstantWeightInitFactory(BaseWeightInitFactory):
+    @staticmethod
+    def instance(wtype, value=None, gain=None, stddev=None, mean=None, nrange=None, sparsity=None):
+        actual_type = 'constant'
+        if str(wtype).lower() != actual_type:
+            return None
+        if value is None:
+            value = 0.0
 
-    if conv_type == '2d':
+        return BaseWeightInitFactory.standard_weights_init.get(actual_type)(value)
+
+
+class UniformWeightInitFactory(BaseWeightInitFactory):
+    @staticmethod
+    def instance(wtype, value=None, gain=None, stddev=None, mean=None, nrange=None, sparsity=None):
+        actual_type = 'uniform'
+        if str(wtype).lower() != actual_type:
+            return None
+
+        nrange = nrange if nrange is not None else 0.01
+        mean = mean if mean is not None else 0.0
+
+        return BaseWeightInitFactory.standard_weights_init.get(actual_type)(nrange, stddev, mean)
+
+
+class NormalWeightInitFactory(BaseWeightInitFactory):
+    @staticmethod
+    def instance(wtype, value=None, gain=None, stddev=None, mean=None, nrange=None, sparsity=None):
+        actual_type = 'normal'
+        if str(wtype).lower() != actual_type:
+            return None
+
+        stddev = stddev if stddev is not None else 0.01
+        mean = mean if mean is not None else 0.0
+
+        return BaseWeightInitFactory.standard_weights_init.get(actual_type)(stddev, mean)
+
+
+class HeNormalWeightInitFactory(BaseWeightInitFactory):
+    @staticmethod
+    def instance(wtype, value=None, gain=None, stddev=None, mean=None, nrange=None, sparsity=None):
+        actual_type = 'henormal'
+        if str(wtype).lower() != actual_type:
+            return None
+
+        gain = gain if gain is not None else 0.01
+
+        return BaseWeightInitFactory.standard_weights_init.get(actual_type)(gain)
+
+
+class HeUniformWeightInitFactory(BaseWeightInitFactory):
+    @staticmethod
+    def instance(wtype, value=None, gain=None, stddev=None, mean=None, nrange=None, sparsity=None):
+        actual_type = 'heuniform'
+        if str(wtype).lower() != actual_type:
+            return None
+
+        gain = gain if gain is not None else 0.01
+
+        return BaseWeightInitFactory.standard_weights_init.get(actual_type)(gain)
+
+
+class GlorotNormalWeightInitFactory(BaseWeightInitFactory):
+    @staticmethod
+    def instance(wtype, value=None, gain=None, stddev=None, mean=None, nrange=None, sparsity=None):
+        actual_type = 'glorotnormal'
+        if str(wtype).lower() != actual_type:
+            return None
+
+        gain = gain if gain is not None else 0.01
+
+        return BaseWeightInitFactory.standard_weights_init.get(actual_type)(gain)
+
+
+class GlorotUniformWeightInitFactory(BaseWeightInitFactory):
+    @staticmethod
+    def instance(wtype, value=None, gain=None, stddev=None, mean=None, nrange=None, sparsity=None):
+        actual_type = 'glorotuniform'
+        if str(wtype).lower() != actual_type:
+            return None
+
+        gain = gain if gain is not None else 0.01
+
+        return BaseWeightInitFactory.standard_weights_init.get(actual_type)(gain)
+
+
+class SparseWeightInitFactory(BaseWeightInitFactory):
+    @staticmethod
+    def instance(wtype, value=None, gain=None, stddev=None, mean=None, nrange=None, sparsity=None):
+        actual_type = 'sparse'
+        if str(wtype).lower() != actual_type:
+            return None
+
+        stddev = stddev if stddev is not None else 0.01
+        sparsity = sparsity if sparsity is not None else 0.1
+
+        return BaseWeightInitFactory.standard_weights_init.get(actual_type)(sparsity, stddev)
+
+
+class OrthoWeightInitFactory(BaseWeightInitFactory):
+    @staticmethod
+    def instance(wtype, value=None, gain=None, stddev=None, mean=None, nrange=None, sparsity=None):
+        actual_type = 'ortho'
+        if str(wtype).lower() != actual_type:
+            return None
+
+        gain = gain if gain is not None else 0.01
+
+        return BaseWeightInitFactory.standard_weights_init.get(actual_type)(gain)
+
+
+class BaseLayerBuilder:
+    available_nonlinerities = {
+        'elu': nonlinearities.elu,
+        'linear': nonlinearities.linear,
+        'rectify': nonlinearities.rectify,
+        'sigmoid': nonlinearities.sigmoid,
+        'softmax': nonlinearities.softmax,
+        'softplus': nonlinearities.softplus,
+        'tanh': nonlinearities.tanh
+    }
+
+    available_weights_factories = {
+        'constant': ConstantWeightInitFactory.instance,
+        'uniform': UniformWeightInitFactory.instance,
+        'normal': NormalWeightInitFactory.instance,
+        'heuniform': HeUniformWeightInitFactory.instance,
+        'henormal': HeNormalWeightInitFactory.instance,
+        'glorotuniform': GlorotUniformWeightInitFactory.instance,
+        'glorotnormal': GlorotNormalWeightInitFactory.instance,
+        'sparse': SparseWeightInitFactory.instance,
+        'ortho': OrthoWeightInitFactory.instance,
+    }
+
+    @staticmethod
+    def get_nonlinearity(ntype):
+        nonlinearity = BaseLayerBuilder.available_nonlinerities.get(str(ntype).lower())
+        return nonlinearity if nonlinearity is not None else nonlinearities.elu
+
+    @staticmethod
+    def get_weights_init(wtype, value=None, gain=None, stddev=None, mean=None, nrange=None, sparsity=None):
+        winit_factory = BaseLayerBuilder.available_weights_factories.get(str(wtype).lower())
+        winit = winit_factory(wtype, value, gain, stddev, mean, nrange, sparsity)
+
+        gain = gain if gain is not None else 0.01
+
+        return winit if winit is not None else BaseLayerBuilder.available_weights_factories.get('henormal')(gain)
+
+    @staticmethod
+    def register_nonlinearity(nname, nlin_func):
+        if not isinstance(nname, str):
+            raise TypeError('Parameter "nname" must be a string!')
+        if not callable(nlin_func):
+            raise TypeError('Parameter "nlin_func" must be callable!')
+
+        BaseLayerBuilder.available_nonlinerities[nname] = nlin_func
+
+    @staticmethod
+    def register_weight_factory(fname, factory_func):
+        if not isinstance(fname, str):
+            raise TypeError('Parameter "fname" must be a string!')
+        if not callable(factory_func):
+            raise TypeError('Parameter "factory_func" must be callable!')
+
+        BaseLayerBuilder.available_nonlinerities[fname] = factory_func
+
+    @staticmethod
+    def build(net, layer, stage):
+        pass
+
+
+class ConvLayerBuilder(BaseLayerBuilder):
+    available_conv_layer_types = {
+        'conv1d': l.Conv1DLayer,
+        'conv2d': l.Conv2DLayer,
+        'conv3d': l.Conv3DLayer
+    }
+
+    @staticmethod
+    def build(net, layer, stage=0):
+        conv_type = CNNBenchNetBuilder.getdval_str(layer['params'].get('type'), stage).lower()
+        kernels = CNNBenchNetBuilder.getdval_int(layer['params'].get('kernels'), stage, 2)
+        kernel_size = CNNBenchNetBuilder.getdval_int(layer['params'].get('kernel_size'), stage, 3)
+        pad = CNNBenchNetBuilder.getdval_str(layer['params'].get('pad'), stage, 'same')
+        stride = CNNBenchNetBuilder.getdval_int(layer['params'].get('stride'), stage, 2)
+        nonlinearity_type = CNNBenchNetBuilder.getdval_str(layer['params'].get('nonlinearity'), stage).lower()
+        weights_type = CNNBenchNetBuilder.getdval_str(layer['params'].get('weigths.type'), stage).lower()
+        weights_gain = CNNBenchNetBuilder.getdval_float(layer['params'].get('weights.gain'), stage, 1.0)
+        weights_stddev = CNNBenchNetBuilder.getdval_float(layer['params'].get('weights.stddev'), stage, 1.0)
+        weights_mean = CNNBenchNetBuilder.getdval_float(layer['params'].get('weights.mean'), stage, 1.0)
+        weights_range = CNNBenchNetBuilder.getdval_float(layer['params'].get('weights.range'), stage, 1.0)
+        weights_value = CNNBenchNetBuilder.getdval_float(layer['params'].get('weights.value'), stage, 1.0)
+        weights_sparsity = CNNBenchNetBuilder.getdval_float(layer['params'].get('weights.sparsity'), stage, 1.0)
+
+        nonlinearity = BaseLayerBuilder.get_nonlinearity(nonlinearity_type)
+        weights = BaseLayerBuilder.get_weights_init(weights_type, weights_value, weights_gain, weights_stddev, weights_mean, weights_range, weights_sparsity)
+
+        layer = ConvLayerBuilder.available_conv_layer_types.get(conv_type)
+        if layer is None:
+            layer = ConvLayerBuilder.available_conv_layer_types.get('conv2d')
+
         return l.batch_norm(
-            l.Conv2DLayer(net, num_filters=kernels, filter_size=kernel_size, pad=pad, stride=stride, W=weights,
-                          nonlinearity=nonlinearity))
-    elif conv_type == '3d':
-        return l.batch_norm(
-            l.Conv3DLayer(net, num_filters=kernels, filter_size=kernel_size, pad=pad, stride=stride, W=weights,
-                          nonlinearity=nonlinearity))
-    else:
-        return l.batch_norm(
-            l.Conv2DLayer(net, num_filters=kernels, filter_size=kernel_size, pad=pad, stride=stride, W=weights,
+            layer(net, num_filters=kernels, filter_size=kernel_size, pad=pad, stride=stride, W=weights,
                           nonlinearity=nonlinearity))
 
 
