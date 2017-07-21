@@ -9,7 +9,7 @@ if __name__ == '__main__':
 
     stages = 11
 
-    rv = ManualSelector()
+    rv = ManualValueSelector()
     testval0 = ValueMulti([14, 23, 4, 4], stages, True)
     testval1 = ValueLinear(0.0, 1.0, stages, True)
     testval2 = ValueStepped(1.0, 10.0, 1.0, stages, True)

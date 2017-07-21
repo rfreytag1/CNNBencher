@@ -75,9 +75,29 @@
 					"type": "pooling",
 					"params": [
 						{
-							"key": "type", // "type", "poolsize"
+							"key": "type", // "type", "pool_size"
 							"type": "static",
 							"value": "max2d" // for maxpoo2d
+						}
+					]
+				},
+				{
+					"type": "dense",
+					"params": [
+						{
+							"key": "units",
+							"type": "static",
+							"value": 500
+						}
+					]
+				},
+				{
+					"type": "dropout",
+					"params": [
+						{
+							"key": "probability",
+							"type": "static",
+							"value": 0.5
 						}
 					]
 				}

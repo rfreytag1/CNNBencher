@@ -62,7 +62,7 @@ def conv_layer_builder(net, layer, stage=0):
 
 def pooling_layer_builder(net, layer, stage=0):
     pool_type = CNNBenchNetBuilder.getdval_str(layer['params'].get('type'), stage).lower()
-    pool_size = CNNBenchNetBuilder.getdval_int(layer['params'].get('poolsize'), stage, 1)
+    pool_size = CNNBenchNetBuilder.getdval_int(layer['params'].get('pool_size'), stage, 1)
 
     if pool_type.startswith('max'):
         if pool_type.endswith('2d'):
@@ -73,6 +73,28 @@ def pooling_layer_builder(net, layer, stage=0):
             return l.MaxPool3DLayer(net, pool_size=pool_size)
         else:
             return l.MaxPool2DLayer(net, pool_size=pool_size)
+
+
+def dense_layer_builder(net, layer, stage=0):
+    units = CNNBenchNetBuilder.getdval_int(layer['params'].get('units'), stage, 1)
+    nonlinearity_type = CNNBenchNetBuilder.getdval_str(layer['params'].get('nonlinearity'), stage).lower()
+    weights_type = CNNBenchNetBuilder.getdval_str(layer['params'].get('weigths.type'), stage).lower()
+
+    nonlinearity = None
+    weights = None
+
+    if nonlinearity_type == 'elu':
+        nonlinearity = nonlinearities.elu
+    else:
+        nonlinearity = nonlinearities.elu
+
+    if weights_type == 'henormal':
+        weights_gain = CNNBenchNetBuilder.getdval_float(layer['params'].get('stride'), stage, 1.0)
+        weights = init.HeNormal(gain=weights_gain)
+    else:
+        weights = init.Normal()
+
+    return l.batch_norm(l.DenseLayer(net, units, W=weights, nonlinearity=nonlinearity))
 
 
 class CNNBenchNetBuilder:
@@ -158,55 +180,34 @@ class CNNBenchNetBuilder:
         for layer in cnn_desc['layers']:
             ltype = str(layer['type']).lower()
             net = CNNBenchNetBuilder.build_layer(net, layer, stage)
-            print(net)
-            '''
-            if ltype == 'input':
-                net = CNNBenchNetBuilder.build_input_layer(net, layer)
-            elif ltype == 'conv':
-                conv_type = str(CNNBenchNetBuilder.getdval(layer['params'].get('type'), stage)).lower()
-                kernels = CNNBenchNetBuilder.getdval_int(layer['params'].get('kernels'), stage)
-                kernel_size = CNNBenchNetBuilder.getdval_int(layer['params'].get('kernel_size'), stage)
-                pad = str(CNNBenchNetBuilder.getdval(layer['params'].get('pad'), stage)).lower()
-                stride = CNNBenchNetBuilder.getdval_int(layer['params'].get('stride'), stage)
-
-                nonlinearity_type = str(CNNBenchNetBuilder.getdval(layer['params'].get('nonlinearity'), stage)).lower()
-                nonlinearity = None
-                if nonlinearity_type == 'elu':
-                    nonlinearity = nonlinearities.elu
-
-                weights_type = str(CNNBenchNetBuilder.getdval(layer['params'].get('weigths.type'), stage)).lower()
-                weights = None
-                if weights_type == 'henormal':
-                    weights_gain = CNNBenchNetBuilder.getdval_float(layer['params'].get('stride'), stage, 1.0)
-                    weights = init.HeNormal(gain=weights_gain)
-
-                if conv_type == '2d':
-                    net = l.batch_norm(l.Conv2DLayer(net, num_filters=kernels, filter_size=kernel_size, pad=pad, stride=stride, W=weights, nonlinearity=nonlinearity))
-                elif conv_type == '3d':
-                    net = l.batch_norm(l.Conv3DLayer(net, num_filters=kernels, filter_size=kernel_size, pad=pad, stride=stride, W=weights, nonlinearity=nonlinearity))
-            elif ltype == 'pooling':
-                pool_type = str(CNNBenchNetBuilder.getdval(layer['params'].get('type'), stage)).lower()
-                pool_size = CNNBenchNetBuilder.getdval_int(layer['params'].get('poolsize'), stage, 1)
-
-                if pool_type.startswith('max'):
-                    if pool_type.endswith('2d'):
-                        net = l.MaxPool2DLayer(net, pool_size=pool_size)
-            '''
-
         return net
 
 stages = 10
 runs = 5
 
-logging.basicConfig(filename="./test2.log", filemode="a+", level=logging.DEBUG, format='[%(asctime)s] %(levelname)s: %(message)s', datefmt='%Y-%m-%dT%H:%M:%S%z')
-default_log = logging.getLogger("CNNBencher")
+default_log = logging.getLogger("CNNBencherDefault")
+lfh = logging.FileHandler("./test_h.log")
+
+# lfm = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s (%{name)s: %{module}s > %{funcName}s @ %{lineno}d', '%Y-%m-%dT%H:%M:%S%z')
+lfm = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s (%(name)s: %(module)s > %(funcName)s @ %(lineno)d)', '%Y-%m-%dT%H:%M:%S%z')
+
+lfh.setFormatter(lfm)
+lfh.setLevel(logging.DEBUG)
+
+default_log.addHandler(lfh)
+
+default_log.warning("Tis' just a test!", {'lineno': 2})
 
 bdp = cnnbp.BenchDescriptionJSONParser(True)
 bench_desc = bdp.parse("./sample_cnn_bench1.json")
 
-print(bench_desc)
+print(len(bench_desc['cnns']['TestCNN01']['layers']))
+print(len(bench_desc['selector'].dynamic_values))
 
-CNNBenchNetBuilder.build(bench_desc['cnns']['TestCNN01'])
+net = CNNBenchNetBuilder.build(bench_desc['cnns']['TestCNN01'])
+
+print("MODEL HAS", (sum(hasattr(layer, 'W') for layer in l.get_all_layers(net))), "WEIGHTED LAYERS")
+print("MODEL HAS", l.count_params(net), "PARAMS")
 
 '''
 bdfp = open("./sample_cnn_bench1.json", "r")
