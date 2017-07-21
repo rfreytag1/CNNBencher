@@ -6,7 +6,7 @@ class BaseValue:
         self.gapless = gapless  # calculate new value without the gap caused by a lock
         self.stages = int(stages)
         self.current_stage = 0
-        self.next_stage = 0  # next stage after being unlocked again
+        self.next_stage = 1  # next stage after being unlocked again
         self.locked = True
         self.val = val
 

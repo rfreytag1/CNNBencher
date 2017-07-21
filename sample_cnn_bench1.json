@@ -28,24 +28,144 @@
 					"type": "input",
 					"params": [
 						{
+							"selected": "true",
 							"key": "batch_size",
-							"type": "static",
-							"value": 64
+							"type": "stepped_int",
+							"start": 64,
+							"end": 512,
+							"step": 32
 						},
 						{
 							"key": "width",
 							"type": "static",
-							"value": 512
+							"value": 256
 						},
 						{
 							"key": "height",
 							"type": "static",
-							"value": 256
+							"value": 512
+						}
+					]
+				},
+				{
+					"type": "conv",
+					"params": [
+						{
+							"key": "kernel_size",
+							"type": "static",
+							"value": 7
 						},
 						{
-							"key": "channels",
+							"key": "kernels",
+							"type": "static",
+							"value": 64
+						},
+						{
+							"key": "stride",
+							"type": "static",
+							"value": 2
+						},
+						{
+							"key": "pad",
+							"type": "static",
+							"value": "same"
+						},
+						{
+							"key": "weights.type",
+							"type": "static",
+							"value": "henormal"
+						},
+						{
+							"key": "weights.gain",
+							"type": "static",
+							"value": 1.0
+						},
+						{
+							"key": "nonlinearity",
+							"type": "static",
+							"value": "elu"
+						}
+					]
+				},
+				{
+					"type": "batch_norm",
+					"params": [
+
+					]
+				},
+				{
+					"type": "pooling",
+					"params": [
+						{
+							"key": "type",
+							"type": "static",
+							"value": "maxpool2d"
+						},
+						{
+							"key": "pool_size",
+							"type": "static",
+							"value": 2
+						}
+					]
+				},
+				{
+					"type": "conv",
+					"params": [
+						{
+							"key": "kernel_size",
+							"type": "static",
+							"value": 5
+						},
+						{
+							"key": "kernels",
+							"type": "static",
+							"value": 128
+						},
+						{
+							"key": "stride",
 							"type": "static",
 							"value": 1
+						},
+						{
+							"key": "pad",
+							"type": "static",
+							"value": "same"
+						},
+						{
+							"key": "weights.type",
+							"type": "static",
+							"value": "henormal"
+						},
+						{
+							"key": "weights.gain",
+							"type": "static",
+							"value": 1.0
+						},
+						{
+							"key": "nonlinearity",
+							"type": "static",
+							"value": "elu"
+						}
+					]
+				},
+				{
+					"type": "batch_norm",
+					"params": [
+
+					]
+				},
+				{
+					"type": "pooling",
+					"params": [
+						{
+							"key": "type",
+							"type": "static",
+							"value": "maxpool2d"
+						},
+						{
+							"key": "pool_size",
+							"type": "static",
+							"value": 2
 						}
 					]
 				},
@@ -59,16 +179,40 @@
 						},
 						{
 							"key": "kernels",
-							"type": "stepped_int",
-							"start": 32,
-							"end": 96,
-							"step": 16
+							"type": "static",
+							"value": 256
 						},
 						{
-							"key": "dimensions",
-							"type": "multi",
-							"values": [ 16, 32, 46, 64 ]
+							"key": "stride",
+							"type": "static",
+							"value": 1
+						},
+						{
+							"key": "pad",
+							"type": "static",
+							"value": "same"
+						},
+						{
+							"key": "weights.type",
+							"type": "static",
+							"value": "henormal"
+						},
+						{
+							"key": "weights.gain",
+							"type": "static",
+							"value": 1.0
+						},
+						{
+							"key": "nonlinearity",
+							"type": "static",
+							"value": "elu"
 						}
+					]
+				},
+				{
+					"type": "batch_norm",
+					"params": [
+
 					]
 				},
 				{
@@ -78,6 +222,241 @@
 							"key": "type",
 							"type": "static",
 							"value": "maxpool2d"
+						},
+						{
+							"key": "pool_size",
+							"type": "static",
+							"value": 2
+						}
+					]
+				},
+				{
+					"type": "conv",
+					"params": [
+						{
+							"key": "kernel_size",
+							"type": "static",
+							"value": 3
+						},
+						{
+							"key": "kernels",
+							"type": "static",
+							"value": 512
+						},
+						{
+							"key": "stride",
+							"type": "static",
+							"value": 1
+						},
+						{
+							"key": "pad",
+							"type": "static",
+							"value": "same"
+						},
+						{
+							"key": "weights.type",
+							"type": "static",
+							"value": "henormal"
+						},
+						{
+							"key": "weights.gain",
+							"type": "static",
+							"value": 1.0
+						},
+						{
+							"key": "nonlinearity",
+							"type": "static",
+							"value": "elu"
+						}
+					]
+				},
+				{
+					"type": "batch_norm",
+					"params": [
+
+					]
+				},
+				{
+					"type": "pooling",
+					"params": [
+						{
+							"key": "type",
+							"type": "static",
+							"value": "maxpool2d"
+						},
+						{
+							"key": "pool_size",
+							"type": "static",
+							"value": 2
+						}
+					]
+				}
+				,
+				{
+					"type": "conv",
+					"params": [
+						{
+							"key": "kernel_size",
+							"type": "static",
+							"value": 3
+						},
+						{
+							"key": "kernels",
+							"type": "static",
+							"value": 512
+						},
+						{
+							"key": "stride",
+							"type": "static",
+							"value": 1
+						},
+						{
+							"key": "pad",
+							"type": "static",
+							"value": "same"
+						},
+						{
+							"key": "weights.type",
+							"type": "static",
+							"value": "henormal"
+						},
+						{
+							"key": "weights.gain",
+							"type": "static",
+							"value": 1.0
+						},
+						{
+							"key": "nonlinearity",
+							"type": "static",
+							"value": "elu"
+						}
+					]
+				},
+				{
+					"type": "batch_norm",
+					"params": [
+
+					]
+				},
+				{
+					"type": "pooling",
+					"params": [
+						{
+							"key": "type",
+							"type": "static",
+							"value": "maxpool2d"
+						},
+						{
+							"key": "pool_size",
+							"type": "static",
+							"value": 2
+						}
+					]
+				},
+				{
+					"type": "dense",
+					"params": [
+						{
+							"key": "units",
+							"type": "static",
+							"value": 512
+						},
+						{
+							"key": "weights.type",
+							"type": "static",
+							"value": "HeNormal"
+						},
+						{
+							"key": "weights.gain",
+							"type": "static",
+							"value": 1.0
+						},
+						{
+							"key": "nonlinearity",
+							"type": "static",
+							"value": "elu"
+						}
+					]
+				},
+				{
+					"type": "batch_norm",
+					"params": [
+
+					]
+				},
+				{
+					"type": "dropout",
+					"params": [
+						{
+							"key": "probability",
+							"type": "static",
+							"value": 0.5
+						}
+					]
+				},
+				{
+					"type": "dense",
+					"params": [
+						{
+							"key": "units",
+							"type": "static",
+							"value": 512
+						},
+						{
+							"key": "weights.type",
+							"type": "static",
+							"value": "HeNormal"
+						},
+						{
+							"key": "weights.gain",
+							"type": "static",
+							"value": 1.0
+						},
+						{
+							"key": "nonlinearity",
+							"type": "static",
+							"value": "elu"
+						}
+					]
+				},
+				{
+					"type": "batch_norm",
+					"params": [
+
+					]
+				},
+				{
+					"type": "dropout",
+					"params": [
+						{
+							"key": "probability",
+							"type": "static",
+							"value": 0.5
+						}
+					]
+				},
+				{
+					"type": "dense",
+					"params": [
+						{
+							"key": "units",
+							"type": "static",
+							"value": 20
+						},
+						{
+							"key": "weight.type",
+							"type": "static",
+							"value": "HeNormal"
+						},
+						{
+							"key": "weight.gain",
+							"type": "static",
+							"value": 1.0
+						},
+						{
+							"key": "nonlinearity",
+							"type": "static",
+							"value": "softmax"
 						}
 					]
 				}

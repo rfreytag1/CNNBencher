@@ -140,6 +140,7 @@ class ManualValueSelector(BaseValueSelector):
                 self.preselected_values[stage] = []
 
             self.preselected_values[stage].append(dval)
+
         else:
             raise TypeError("Argument dvals of invalid Type. Must be list of or single BaseValue-based instance.")
 

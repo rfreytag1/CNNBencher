@@ -24,7 +24,7 @@ class LasagneConvLayerBuilder(BaseLasagneLayerBuilder):
 
     @staticmethod
     def build(net, layer, stage=0):
-        conv_type = LasagneConvLayerBuilder.getdval_str(layer['params'].get('type'), stage).lower()
+        conv_type = LasagneConvLayerBuilder.getdval_str(layer['params'].get('type'), stage, 'conv2d').lower()
         kernels = LasagneConvLayerBuilder.getdval_int(layer['params'].get('kernels'), stage, 2)
         kernel_size = LasagneConvLayerBuilder.getdval_int(layer['params'].get('kernel_size'), stage, 3)
         pad = LasagneConvLayerBuilder.getdval_str(layer['params'].get('pad'), stage, 'same')
@@ -33,14 +33,12 @@ class LasagneConvLayerBuilder(BaseLasagneLayerBuilder):
 
         nonlinearity = LasagneConvLayerBuilder.get_nonlinearity(nonlinearity_type)
         weights = LasagneConvLayerBuilder.get_weights_initw(layer['params'])
-        print(weights)
 
         layertype = LasagneConvLayerBuilder.available_conv_layer_types.get(conv_type)
         if layertype is None:
             layertype = LasagneConvLayerBuilder.available_conv_layer_types.get('conv2d')
 
-        return l.batch_norm(
-            layertype(net, num_filters=kernels, filter_size=kernel_size, pad=pad, stride=stride, W=weights, nonlinearity=nonlinearity))
+        return layertype(net, num_filters=kernels, filter_size=kernel_size, pad=pad, stride=stride, W=weights, nonlinearity=nonlinearity)
 
 
 class LasagnePoolLayerBuilder(BaseLasagneLayerBuilder):
@@ -84,7 +82,7 @@ class LasagneDenseLayerBuilder(BaseLasagneLayerBuilder):
         nonlinearity = LasagneDenseLayerBuilder.get_nonlinearity(nonlinearity_type)
         weights = LasagneConvLayerBuilder.get_weights_initw(layer['params'])
 
-        return l.batch_norm(l.DenseLayer(net, units, W=weights, nonlinearity=nonlinearity))
+        return l.DenseLayer(net, units, W=weights, nonlinearity=nonlinearity)
 
 
 class LasagneDropoutLayerBuilder(BaseLasagneLayerBuilder):
@@ -93,3 +91,9 @@ class LasagneDropoutLayerBuilder(BaseLasagneLayerBuilder):
         probability = LasagneDropoutLayerBuilder.getdval_float(layer['params'].get('probability'), stage, 0.5)
 
         return l.DropoutLayer(net, probability)
+
+
+class LasagneBatchNormLayerBuilder(BaseLasagneLayerBuilder):
+    @staticmethod
+    def build(net, layer, stage):
+        return l.BatchNormLayer(net)

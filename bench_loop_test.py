@@ -38,8 +38,23 @@ netbuilder = cnnb.LasagneCNNBuilder()
 
 net = netbuilder.build(bench_desc['cnns']['TestCNN01'])
 
-print("MODEL HAS", (sum(hasattr(layer, 'W') for layer in l.get_all_layers(net))), "WEIGHTED LAYERS")
-print("MODEL HAS", l.count_params(net), "PARAMS")
+for stage in range(0, 4):
+    bench_desc['selector'].select_dvals(stage)
+    net = netbuilder.rebuild(stage)
+    print("===START PARAMETERS===")
+    lnums = {
+    }
+    for layerp in bench_desc['cnns']['TestCNN01']['layers']:
+        ltype = layerp['type']
+        if ltype not in lnums:
+            lnums[ltype] = 0
+        for lparmname, lparmval in layerp['params'].items():
+            print(layerp['type'] + str(lnums[ltype]) + "." + lparmname + ": " + str(lparmval))
+        lnums[ltype] += 1
+
+    print("===END PARAMETERS===")
+    print("MODEL HAS", (sum(hasattr(layer, 'W') for layer in l.get_all_layers(net))), "WEIGHTED LAYERS")
+    print("MODEL HAS", l.count_params(net), "PARAMS")
 
 '''
 bdfp = open("./sample_cnn_bench1.json", "r")

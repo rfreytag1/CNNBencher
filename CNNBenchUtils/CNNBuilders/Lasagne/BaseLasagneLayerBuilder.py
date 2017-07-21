@@ -42,7 +42,6 @@ class BaseLasagneLayerBuilder(BaseLayerBuilder):
         gain = gain if gain is not None else 0.01
 
         winit = winit_factory(wtype, value, gain, stddev, mean, nrange, sparsity)
-        print(winit)
 
         return winit if winit is not None else BaseLasagneLayerBuilder.available_weights_factories.get('henormal')(gain)
 

@@ -46,7 +46,6 @@ class BaseValueSelector:
 
     def lock_all(self):
         for dval in self.unlocked_values:
-            print("lock")
             dval.lock()
 
         self.locked_values.clear()

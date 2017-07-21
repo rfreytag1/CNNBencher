@@ -42,7 +42,6 @@ class NormalWeightInitFactory(BaseLasagneWeightInitFactory):
 class HeNormalWeightInitFactory(BaseLasagneWeightInitFactory):
     @staticmethod
     def instance(wtype, value=None, gain=None, stddev=None, mean=None, nrange=None, sparsity=None):
-        print("Called")
         actual_type = 'henormal'
         if str(wtype).lower() != actual_type:
             return None

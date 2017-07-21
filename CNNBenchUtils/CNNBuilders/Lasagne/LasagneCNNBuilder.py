@@ -8,7 +8,8 @@ class LasagneCNNBuilder(BaseCNNBuilder):
         'conv': LasagneConvLayerBuilder,
         'pooling': LasagnePoolLayerBuilder,
         'dense': LasagneDenseLayerBuilder,
-        'dropout': LasagneDropoutLayerBuilder
+        'dropout': LasagneDropoutLayerBuilder,
+        'batch_norm': LasagneBatchNormLayerBuilder
     }
 
     def __init__(self):
@@ -25,7 +26,7 @@ class LasagneCNNBuilder(BaseCNNBuilder):
 
         LasagneCNNBuilder.layer_builders[layer_type] = builder_func
 
-    def build_layer(self, net, layer, stage=0):
+    def __build_layer(self, net, layer, stage=0):
         layer_type = str(layer.get('type', 'none')).lower()
 
         if layer_type == 'none':
@@ -42,14 +43,8 @@ class LasagneCNNBuilder(BaseCNNBuilder):
         self.cnn_description = cnn_desc
         net = None
         for layer in self.cnn_description['layers']:
-            net = self.build_layer(net, layer, stage)
+            net = self.__build_layer(net, layer, stage)
         return net
 
     def rebuild(self, stage=0):
-        if self.cnn_description is None:
-            return None
-
-        net = None
-        for layer in self.cnn_description['layers']:
-            net = self.build_layer(net, layer, stage)
-        return net
+        return self.build(self.cnn_description, stage)

@@ -1,4 +1,5 @@
 import json
+import numbers
 
 from CNNBenchUtils.BenchDescriptionParsers.BaseBenchDescriptionParser import BaseBenchDescriptionParser
 
@@ -34,10 +35,20 @@ class BenchDescriptionJSONParser(BaseBenchDescriptionParser):
                 self.bench_desc['cnns'][cnn_name]['layers'][layer_number]['params'] = {}
                 for lparams in layer['params']:
                     pkey = str(lparams['key'])
+                    pselected = lparams.get('selected')
                     dval = self.parse_param(lparams)
                     if dval is not None:
                         self.bench_desc['selector'].register_dval(dval)
                         self.bench_desc['cnns'][cnn_name]['layers'][layer_number]['params'][pkey] = dval
+                        if isinstance(pselected, list):
+                            for stagenum in pselected:
+                                self.bench_desc['selector'].preselect(dval, stagenum)
+                        elif isinstance(pselected, numbers.Number):
+                            self.bench_desc['selector'].preselect(dval, pselected)
+                        elif isinstance(pselected, str):
+                            if pselected.lower() == 'true':
+                                self.bench_desc['selector'].preselect(dval)
+
                 layer_number += 1
 
         return self.bench_desc
