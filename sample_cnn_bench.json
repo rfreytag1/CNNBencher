@@ -15,9 +15,9 @@
 		}
 	],
 	"param_change": {
-		"selection": "ordered" // "ordered", "all", "random", "roundrobin"
+		"selection": "ordered" // "ordered", "all", "random", "roundrobin", "manual"
 	},
-	"dataset_augmentations": { // still not sure about this, might get too complex. Seperate thing?
+	"dataset_augmentations": { // still not sure about this, might get too complex. Separate thing?
 
 	},
 	"cnn_configurations": [
@@ -25,20 +25,35 @@
 			"cnn_name": "TestCNN01",
 			"layers": [
 				{
-					"type": "data_in", // "data_in", "convolution", "pooling", "dense"
+					"type": "input", // "input", "conv", "pooling", "dense", "dropout"
 					"params": [
 						{
-							"key": "batch_size",
-							"type": "static", // "static", "stepped", "linear", "cosine", "multi", "multi-rr", "multi-random"
+							"key": "width",
+							"type": "static", // "static", "stepped", "stepped_int", "linear", "cosine", "multi", "multi-rr", "multi-random"
+							"value": 512
+						},
+						{
+							"key": "height",
+							"type": "static",
+							"value": 256
+						},
+						{
+							"key": "channels",
+							"type": "static",
+							"value": 1
+						},
+						{
+							"key": "batch_size", // used for both batch input as well as inputlayer parameter
+							"type": "static",
 							"value": 64
 						}
 					]
 				},
 				{
-					"type": "convolution",
+					"type": "conv",
 					"params": [
 						{
-							"key": "kernel_size",
+							"key": "kernel_size", //"kernel_size", "kernels", "pad", "stride", "nonlinearity", "weights.type", "weights.gain", "weights.stddev", "weights.mean", "weights.range"
 							"type": "static",
 							"value": 3
 						},
@@ -50,9 +65,9 @@
 							"step": 16
 						},
 						{
-							"key": "dimensions",
-							"type": "multi",
-							"values": [ 16, 32, 46, 64 ]
+							"key": "nonlinearity.type",
+							"type": "static",
+							"value": "HeNormal"
 						}
 					]
 				},
@@ -60,9 +75,9 @@
 					"type": "pooling",
 					"params": [
 						{
-							"key": "type",
+							"key": "type", // "type", "poolsize"
 							"type": "static",
-							"value": "max" // for maxpooling
+							"value": "max2d" // for maxpoo2d
 						}
 					]
 				}

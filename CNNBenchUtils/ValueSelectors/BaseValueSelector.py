@@ -3,9 +3,9 @@ from CNNBenchUtils.DynamicValues.BaseValue import BaseValue
 
 class BaseValueSelector:
     def __init__(self):
-        self.dynamic_values = []
-        self.locked_values = []
-        self.unlocked_values = []
+        self.dynamic_values = [] # list of all registered dynamic values
+        self.locked_values = [] # list of currently locked dvalues
+        self.unlocked_values = [] # list of currently unlocked dvalues
 
     def register_dval(self, dval):
         if issubclass(type(dval), BaseValue):
@@ -16,6 +16,9 @@ class BaseValueSelector:
                 self.unlocked_values.append(dval)
         else:
             raise TypeError("dval must be BaseValue derived!")
+
+    def preselect(self, dval, stage=-1):
+        pass
 
     def select_dvals(self, stage):
         raise NotImplementedError()

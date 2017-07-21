@@ -35,7 +35,7 @@
 					]
 				},
 				{
-					"type": "convolution",
+					"type": "conv",
 					"params": [
 						{
 							"key": "kernel_size",
@@ -44,7 +44,7 @@
 						},
 						{
 							"key": "kernels",
-							"type": "stepped",
+							"type": "stepped_int",
 							"start": 32,
 							"end": 96,
 							"step": 16
@@ -62,7 +62,7 @@
 						{
 							"key": "type",
 							"type": "static",
-							"value": "max"
+							"value": "max2d"
 						}
 					]
 				}

@@ -2,8 +2,11 @@
 
 
 class BaseValue:
-    def __init__(self, val=None, stages=0):
-        self.stages = stages
+    def __init__(self, val=None, stages=0, gapless=False):
+        self.gapless = gapless  # calculate new value without the gap caused by a lock
+        self.stages = int(stages)
+        self.current_stage = 0
+        self.next_stage = 0  # next stage after being unlocked again
         self.locked = True
         self.val = val
 
@@ -13,8 +16,19 @@ class BaseValue:
     def __repr__(self):
         return str(self.val)
 
-    def value(self, stage):
-        raise NotImplementedError()
+    def value(self, stage=0):
+        if not self.is_locked() and self.gapless:
+            if stage != self.current_stage:
+                self.current_stage = stage
+                self.next_stage += 1
+
+        return None
+
+    def actual_stage(self, stage):
+        if self.gapless:
+            return (self.next_stage - 1) if (self.next_stage - 1) >= 0 else 0
+        else:
+            return stage
 
     # locking mechanism to keep values static if needed
     def lock(self):
