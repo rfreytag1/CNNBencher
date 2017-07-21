@@ -77,7 +77,7 @@
 						{
 							"key": "type",
 							"type": "static",
-							"value": "max2d"
+							"value": "maxpool2d"
 						}
 					]
 				}

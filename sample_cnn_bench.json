@@ -38,7 +38,7 @@
 							"value": 256
 						},
 						{
-							"key": "channels",
+							"key": "depth",
 							"type": "static",
 							"value": 1
 						},
