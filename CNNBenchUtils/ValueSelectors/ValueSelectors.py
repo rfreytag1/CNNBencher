@@ -6,6 +6,17 @@ class RandomValueSelector(BaseValueSelector):
     def __init__(self):
         super(RandomValueSelector, self).__init__()
 
+    @staticmethod
+    def parse(selector):
+        BaseValueSelector.parse(selector)
+
+        selector_type = str(selector['selector'])
+
+        if selector_type != 'random':
+            return None
+
+        return RandomValueSelector()
+
     def select_dvals(self, stage):
         self.lock_all()
         idx = random.randint(0, len(self.dynamic_values)-1)
@@ -17,6 +28,17 @@ class RoundRobinValueSelector(BaseValueSelector):
     def __init__(self):
         super(RoundRobinValueSelector, self).__init__()
 
+    @staticmethod
+    def parse(selector):
+        BaseValueSelector.parse(selector)
+
+        selector_type = str(selector['selector'])
+
+        if selector_type != 'roundrobin':
+            return None
+
+        return RoundRobinValueSelector()
+
     def select_dvals(self, stage):
         self.lock_all()
         idx = stage % len(self.dynamic_values)
@@ -26,6 +48,17 @@ class RoundRobinValueSelector(BaseValueSelector):
 class OrderedValueSelector(BaseValueSelector):
     def __init__(self):
         super(OrderedValueSelector, self).__init__()
+
+    @staticmethod
+    def parse(selector):
+        BaseValueSelector.parse(selector)
+
+        selector_type = str(selector['selector'])
+
+        if selector_type != 'ordered':
+            return None
+
+        return OrderedValueSelector()
 
     def select_dvals(self, stage):
         self.lock_all()
@@ -40,6 +73,17 @@ class AllValueSelector(BaseValueSelector):
         super(AllValueSelector, self).__init__()
         self.select_called = False
 
+    @staticmethod
+    def parse(selector):
+        BaseValueSelector.parse(selector)
+
+        selector_type = str(selector['selector'])
+
+        if selector_type != 'all':
+            return None
+
+        return AllValueSelector()
+
     def select_dvals(self, stage):
         if not self.select_called:
             self.select_called = True
@@ -51,6 +95,17 @@ class ManualValueSelector(BaseValueSelector):
         super(ManualValueSelector, self).__init__()
         self.preselected_values = {}
         self.permaselected_values = []
+
+    @staticmethod
+    def parse(selector):
+        BaseValueSelector.parse(selector)
+
+        selector_type = str(selector['selector'])
+
+        if selector_type != 'manual':
+            return None
+
+        return ManualValueSelector()
 
     def preselect(self, dval, stage=-1):
         if issubclass(type(dval), BaseValue):

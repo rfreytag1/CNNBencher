@@ -15,7 +15,7 @@
 		}
 	],
 	"param_change": {
-		"selection": "ordered"
+		"selector": "manual"
 	},
 	"dataset_augmentations": {
 

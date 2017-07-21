@@ -7,6 +7,13 @@ class BaseValueSelector:
         self.locked_values = [] # list of currently locked dvalues
         self.unlocked_values = [] # list of currently unlocked dvalues
 
+    @staticmethod
+    def parse(selector):
+        if not isinstance(selector, dict):
+            raise TypeError('Parameter "selector" must be a dict!')
+
+        return None
+
     def register_dval(self, dval):
         if issubclass(type(dval), BaseValue):
             self.dynamic_values.append(dval)

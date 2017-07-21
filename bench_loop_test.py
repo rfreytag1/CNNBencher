@@ -12,89 +12,7 @@ from lasagne import init
 import CNNBenchUtils.DynamicValues.ValueTypes as cnndval
 from CNNBenchUtils.ValueSelectors.ValueSelectors import *
 
-
-class CNNBenchDescription(dict):
-    pass
-
-
-class CNNBenchDescriptionParser:
-    def __init__(self):
-        self.bench_desc = CNNBenchDescription()
-
-    def register_dynamic_value_type(self, type):
-        pass
-
-    def parse_param(self):
-        pass
-
-    def parse(self, file):
-        fp = open(file, 'r')
-
-        dval_gapless = True
-
-        raw = json.load(fp, encoding='utf-8')
-
-        # TODO: this looks disastrous. clean up. maybe?
-        self.bench_desc['name'] = str(raw['benchmark_name'])
-        self.bench_desc['stages'] = int(raw['stages'])
-        self.bench_desc['runs'] = int(raw['runs'])
-        self.bench_desc['cnns'] = {}
-
-        value_selector_type = str(raw['param_change']['selector']).lower()
-
-        if value_selector_type == 'manual':
-            self.bench_desc['selector'] = ManualValueSelector()
-
-        for cnn in raw['cnn_configurations']:
-            cnn_name = str(cnn['cnn_name'])
-            self.bench_desc['cnns'][cnn_name] = {}
-            self.bench_desc['cnns'][cnn_name]['layers'] = []
-            layer_number = 0
-            for layer in cnn['layers']:
-                self.bench_desc['cnns'][cnn_name]['layers'].append({})
-                self.bench_desc['cnns'][cnn_name]['layers'][layer_number]['type'] = layer['type']
-                self.bench_desc['cnns'][cnn_name]['layers'][layer_number]['params'] = {}
-                for lparams in layer['params']:
-                    ptype = str(lparams['type'])
-                    ptypel = ptype.lower()
-                    pkey = str(lparams['key'])
-
-                    dval = None
-                    if ptypel == 'static':
-                        pval = str(lparams['value'])
-                        dval = cnndval.ValueStatic(pval, self.bench_desc['stages'], dval_gapless)
-                    elif ptypel == 'linear':
-                        pstart = float(lparams['start'])
-                        pend = float(lparams['end'])
-                        dval = cnndval.ValueLinear(pstart, pend, self.bench_desc['stages'], dval_gapless)
-                    elif ptypel == 'stepped':
-                        pstart = float(lparams['start'])
-                        pend = float(lparams['end'])
-                        pstep = float(lparams['step'])
-                        dval = cnndval.ValueStepped(pstart, pend, pstep, self.bench_desc['stages'], dval_gapless)
-                    elif ptypel == 'stepped_int':
-                        pstart = int(lparams['start'])
-                        pend = int(lparams['end'])
-                        pstep = int(lparams['step'])
-                        dval = cnndval.ValueSteppedInt(pstart, pend, pstep, self.bench_desc['stages'], dval_gapless)
-                    elif ptypel == 'cosine':
-                        pstart = float(lparams['start'])
-                        pend = float(lparams['end'])
-                        dval = cnndval.ValueCosine(pstart, pend, self.bench_desc['stages'], dval_gapless)
-                    elif ptypel == 'multi':
-                        pvals = list(lparams['values'])
-                        dval = cnndval.ValueMulti(pvals, self.bench_desc['stages'], dval_gapless)
-                    elif ptypel == 'multi-rr':
-                        pvals = list(lparams['values'])
-                        dval = cnndval.ValueMultiRR(pvals, self.bench_desc['stages'], dval_gapless)
-
-                    if dval is not None:
-                        self.bench_desc['selector'].register_dval(dval)
-                        self.bench_desc['cnns'][cnn_name]['layers'][layer_number]['params'][pkey] = dval
-                layer_number += 1
-
-        return self.bench_desc
-
+import CNNBenchUtils.BenchDescriptionParsers.BenchDescriptionJSONParser as cnnbp
 
 class CNNBenchNetBuilder:
     def __init__(self):
@@ -178,7 +96,12 @@ class CNNBenchNetBuilder:
         return net
 
 
-
+def param_stepped_parse(param, stages, gapless):
+    pstart = int(param['start'])
+    pend = int(param['end'])
+    pstep = int(param['step'])
+    dval = cnndval.ValueSteppedInt(pstart, pend, pstep, stages, gapless)
+    return dval
 
 
 stages = 10
@@ -187,7 +110,7 @@ runs = 5
 logging.basicConfig(filename="./test2.log", filemode="a+", level=logging.DEBUG, format='[%(asctime)s] %(levelname)s: %(message)s', datefmt='%Y-%m-%dT%H:%M:%S%z')
 default_log = logging.getLogger("CNNBencher")
 
-bdp = CNNBenchDescriptionParser()
+bdp = cnnbp.BenchDescriptionJSONParser(True)
 bench_desc = bdp.parse("./sample_cnn_bench1.json")
 
 print(bench_desc)

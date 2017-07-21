@@ -16,6 +16,20 @@ class BaseValue:
     def __repr__(self):
         return str(self.val)
 
+    @staticmethod
+    def parse(param, stages, gapless):
+        if not isinstance(param, dict):
+            raise TypeError('Parameter "param" must be a dict!')
+        if not isinstance(stages, int):
+            raise TypeError('Parameter "stages" must be an integer!')
+        if not isinstance(gapless, bool):
+            raise TypeError('Parameter "gapless" must be a boolean!')
+
+        if 'type' not in param:
+            raise ValueError('Dict "param" is missing field "type"!')
+
+        return None
+
     def value(self, stage=0):
         if not self.is_locked() and self.gapless:
             if stage != self.current_stage:
