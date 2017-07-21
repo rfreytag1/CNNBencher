@@ -19,21 +19,21 @@ class BaseBenchDescriptionParser:
 
         # register default param parsers
 
-        self.register_dvalue_type('static', ValueStatic.parse)
-        self.register_dvalue_type('linear', ValueLinear.parse)
-        self.register_dvalue_type('cosine', ValueCosine.parse)
-        self.register_dvalue_type('stepped', ValueStepped.parse)
-        self.register_dvalue_type('stepped_int', ValueSteppedInt.parse)
-        self.register_dvalue_type('multi', ValueMulti.parse)
-        self.register_dvalue_type('multi-rr', ValueMultiRR.parse)
+        self.register_dvalue_type(ValueStatic.shortname(), ValueStatic.parse)
+        self.register_dvalue_type(ValueLinear.shortname(), ValueLinear.parse)
+        self.register_dvalue_type(ValueCosine.shortname(), ValueCosine.parse)
+        self.register_dvalue_type(ValueStepped.shortname(), ValueStepped.parse)
+        self.register_dvalue_type(ValueSteppedInt.shortname(), ValueSteppedInt.parse)
+        self.register_dvalue_type(ValueMulti.shortname(), ValueMulti.parse)
+        self.register_dvalue_type(ValueMultiRR.shortname(), ValueMultiRR.parse)
 
         # register default selector parsers
 
-        self.register_dvalue_selector('random', RandomValueSelector.parse)
-        self.register_dvalue_selector('ordered', OrderedValueSelector.parse)
-        self.register_dvalue_selector('roundrobin', RoundRobinValueSelector.parse)
-        self.register_dvalue_selector('all', AllValueSelector.parse)
-        self.register_dvalue_selector('manual', ManualValueSelector.parse)
+        self.register_dvalue_selector(RandomValueSelector.shortname(), RandomValueSelector.parse)
+        self.register_dvalue_selector(OrderedValueSelector.shortname(), OrderedValueSelector.parse)
+        self.register_dvalue_selector(RoundRobinValueSelector.shortname(), RoundRobinValueSelector.parse)
+        self.register_dvalue_selector(AllValueSelector.shortname(), AllValueSelector.parse)
+        self.register_dvalue_selector(ManualValueSelector.shortname(), ManualValueSelector.parse)
 
     def register_dvalue_type(self, dvtype, parser_func):
         if not isinstance(dvtype, str):
@@ -50,7 +50,7 @@ class BaseBenchDescriptionParser:
         self.selector_parsers[stype] = parser_func
 
     def parse_param(self, param):
-        param_type = str(param['type'])
+        param_type = str(param['type']).lower()
         parse_func = self.param_parsers.get(param_type)
 
         if parse_func is None or not callable(parse_func):

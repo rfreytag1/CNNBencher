@@ -65,7 +65,7 @@
 							"step": 16
 						},
 						{
-							"key": "nonlinearity.type",
+							"key": "weights.type",
 							"type": "static",
 							"value": "HeNormal"
 						}

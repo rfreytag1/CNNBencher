@@ -14,6 +14,10 @@ class ValueStatic(BaseValue):
             return ValueStatic(param['value'], stages, gapless)
         return None
 
+    @staticmethod
+    def shortname():
+        return 'static'
+
     def value(self, stage=0):
         return self.val
 
@@ -35,6 +39,10 @@ class ValueStepped(BaseValue):
             step = float(param['step'])
             return ValueStepped(start, end, step, stages, gapless)
         return None
+
+    @staticmethod
+    def shortname():
+        return 'stepped'
 
     def value(self, stage=0):
         super(ValueStepped, self).value(stage)
@@ -70,6 +78,10 @@ class ValueSteppedInt(BaseValue):
             return ValueSteppedInt(start, end, step, stages, gapless)
         return None
 
+    @staticmethod
+    def shortname():
+        return 'stepped_int'
+
     def value(self, stage=0):
         super(ValueSteppedInt, self).value(stage)
         if self.is_locked():
@@ -99,6 +111,10 @@ class ValueLinear(BaseValue):
             end = float(param['end'])
             return ValueLinear(start, end, stages, gapless)
         return None
+
+    @staticmethod
+    def shortname():
+        return 'linear'
 
     def value(self, stage=0):
         super(ValueLinear, self).value(stage)
@@ -133,6 +149,10 @@ class ValueCosine(BaseValue):
             return ValueCosine(start, end, stages, gapless)
         return None
 
+    @staticmethod
+    def shortname():
+        return 'cosine'
+
     def value(self, stage=0):
         super(ValueCosine, self).value(stage)
         if self.is_locked():
@@ -164,6 +184,10 @@ class ValueMulti(BaseValue):
             values = list(param['values'])
             return ValueMulti(values, stages, gapless)
         return None
+
+    @staticmethod
+    def shortname():
+        return 'multi'
 
     def value(self, stage=0):
         super(ValueMulti, self).value(stage)
@@ -197,6 +221,10 @@ class ValueMultiRR(BaseValue):
             values = list(param['values'])
             return ValueMultiRR(values, stages, gapless)
         return None
+
+    @staticmethod
+    def shortname():
+        return 'multi-rr'
 
     def value(self, stage=0):
         super(ValueMultiRR, self).value(stage)

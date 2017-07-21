@@ -17,6 +17,10 @@ class RandomValueSelector(BaseValueSelector):
 
         return RandomValueSelector()
 
+    @staticmethod
+    def shortname():
+        return 'random'
+
     def select_dvals(self, stage):
         self.lock_all()
         idx = random.randint(0, len(self.dynamic_values)-1)
@@ -39,6 +43,10 @@ class RoundRobinValueSelector(BaseValueSelector):
 
         return RoundRobinValueSelector()
 
+    @staticmethod
+    def shortname():
+        return 'roundrobin'
+
     def select_dvals(self, stage):
         self.lock_all()
         idx = stage % len(self.dynamic_values)
@@ -59,6 +67,10 @@ class OrderedValueSelector(BaseValueSelector):
             return None
 
         return OrderedValueSelector()
+
+    @staticmethod
+    def shortname():
+        return 'ordered'
 
     def select_dvals(self, stage):
         self.lock_all()
@@ -84,6 +96,10 @@ class AllValueSelector(BaseValueSelector):
 
         return AllValueSelector()
 
+    @staticmethod
+    def shortname():
+        return 'all'
+
     def select_dvals(self, stage):
         if not self.select_called:
             self.select_called = True
@@ -106,6 +122,10 @@ class ManualValueSelector(BaseValueSelector):
             return None
 
         return ManualValueSelector()
+
+    @staticmethod
+    def shortname():
+        return 'manual'
 
     def preselect(self, dval, stage=-1):
         if issubclass(type(dval), BaseValue):

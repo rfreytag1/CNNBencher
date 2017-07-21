@@ -30,6 +30,10 @@ class BaseValue:
 
         return None
 
+    @staticmethod
+    def shortname():
+        return 'none'
+
     def value(self, stage=0):
         if not self.is_locked() and self.gapless:
             if stage != self.current_stage:

@@ -25,12 +25,27 @@
 			"cnn_name": "TestCNN01",
 			"layers": [
 				{
-					"type": "data_in",
+					"type": "input",
 					"params": [
 						{
 							"key": "batch_size",
 							"type": "static",
 							"value": 64
+						},
+						{
+							"key": "width",
+							"type": "static",
+							"value": 512
+						},
+						{
+							"key": "height",
+							"type": "static",
+							"value": 256
+						},
+						{
+							"key": "channels",
+							"type": "static",
+							"value": 1
 						}
 					]
 				},

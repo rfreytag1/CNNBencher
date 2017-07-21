@@ -14,6 +14,10 @@ class BaseValueSelector:
 
         return None
 
+    @staticmethod
+    def shortname():
+        return 'none'
+
     def register_dval(self, dval):
         if issubclass(type(dval), BaseValue):
             self.dynamic_values.append(dval)
