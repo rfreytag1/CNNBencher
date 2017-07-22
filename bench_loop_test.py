@@ -11,6 +11,8 @@ import CNNBenchUtils.BenchDescriptionParsers.BenchDescriptionJSONParser as cnnbp
 
 import CNNBenchUtils.CNNBuilders.Lasagne.LasagneCNNBuilder as cnnb
 
+import CNNBenchUtils.CNNBuilders.Lasagne.LasagneTrainingFunctionBuilder as cnntf
+
 
 stages = 10
 runs = 5
@@ -38,20 +40,30 @@ netbuilder = cnnb.LasagneCNNBuilder()
 
 net = netbuilder.build(bench_desc['cnns']['TestCNN01'])
 
+train_func = cnntf.LasagneTrainingFunctionBuilder.build(net, bench_desc['cnns']['TestCNN01']['training']['function'])
+
+lpd = open("layerparams.csv", 'w')
+lpd.write("stage;")
+lnums = {
+}
+for layerp in bench_desc['cnns']['TestCNN01']['layers']:
+    ltype = layerp['type']
+    if ltype not in lnums:
+        lnums[ltype] = 0
+    for lparmname, lparmval in layerp['params'].items():
+        lpd.write(layerp['type'] + str(lnums[ltype]) + "." + lparmname + ";")
+    lnums[ltype] += 1
+lpd.write("\n")
+
 for stage in range(0, 4):
     bench_desc['selector'].select_dvals(stage)
     net = netbuilder.rebuild(stage)
     print("===START PARAMETERS===")
-    lnums = {
-    }
+    lpd.write(str(stage) + ";")
     for layerp in bench_desc['cnns']['TestCNN01']['layers']:
-        ltype = layerp['type']
-        if ltype not in lnums:
-            lnums[ltype] = 0
         for lparmname, lparmval in layerp['params'].items():
-            print(layerp['type'] + str(lnums[ltype]) + "." + lparmname + ": " + str(lparmval))
-        lnums[ltype] += 1
-
+            lpd.write(str(lparmval) + ";")
+    lpd.write("\n")
     print("===END PARAMETERS===")
     print("MODEL HAS", (sum(hasattr(layer, 'W') for layer in l.get_all_layers(net))), "WEIGHTED LAYERS")
     print("MODEL HAS", l.count_params(net), "PARAMS")

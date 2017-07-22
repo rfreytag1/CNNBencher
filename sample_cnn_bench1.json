@@ -23,6 +23,74 @@
 	"cnn_configurations": [
 		{
 			"cnn_name": "TestCNN01",
+			"training": {
+				"params": [
+					{
+						"key": "epochs",
+						"type": "static",
+						"value": 50
+					}
+				],
+				"function": {
+					"params": [
+						{
+							"key": "learning_rate.start",
+							"type": "static",
+							"value": 0.01
+						},
+						{
+							"key": "learning_rate.end",
+							"type": "static",
+							"value": 0.001
+						},
+						{
+							"key": "learning_rate.interp",
+							"type": "static",
+							"value": "lerp"
+						},
+						{
+							"key": "updates.type",
+							"type": "static",
+							"value": "adam"
+						},
+						{
+							"key": "updates.beta1",
+							"type": "static",
+							"value": 0.01
+						},
+						{
+							"key": "updates.beta2",
+							"type": "static",
+							"value": 0.1
+						},
+						{
+							"key": "updates.epsilon",
+							"type": "static",
+							"value": 0.0001
+						},
+						{
+							"key": "updates.rho",
+							"type": "static",
+							"value": 0.0001
+						},
+						{
+							"key": "updates.momentum",
+							"type": "static",
+							"value": 1.0
+						},
+						{
+							"key": "regularization.l2_weight",
+							"type": "static",
+							"value": 0.00001
+						},
+						{
+							"key": "loss.multilabel",
+							"type": "static",
+							"value": "true"
+						}
+					]
+				}
+			},
 			"layers": [
 				{
 					"type": "input",
@@ -44,6 +112,11 @@
 							"key": "height",
 							"type": "static",
 							"value": 512
+						},
+						{
+							"key": "depth",
+							"type": "static",
+							"value": 1
 						}
 					]
 				},
@@ -303,7 +376,7 @@
 						{
 							"key": "kernels",
 							"type": "static",
-							"value": 512
+							"value": 1024
 						},
 						{
 							"key": "stride",

@@ -4,7 +4,6 @@ from CNNBenchUtils.CNNBuilders.Lasagne.BaseLasagneLayerBuilder import BaseLasagn
 
 
 class LasagneInputLayerBuilder(BaseLasagneLayerBuilder):
-
     @staticmethod
     def build(net, layer, stage):
         batch_size = LasagneInputLayerBuilder.getdval(layer['params'].get('batch_size'), stage)
@@ -27,7 +26,7 @@ class LasagneConvLayerBuilder(BaseLasagneLayerBuilder):
         conv_type = LasagneConvLayerBuilder.getdval_str(layer['params'].get('type'), stage, 'conv2d').lower()
         kernels = LasagneConvLayerBuilder.getdval_int(layer['params'].get('kernels'), stage, 2)
         kernel_size = LasagneConvLayerBuilder.getdval_int(layer['params'].get('kernel_size'), stage, 3)
-        pad = LasagneConvLayerBuilder.getdval_str(layer['params'].get('pad'), stage, 'same')
+        pad = LasagneConvLayerBuilder.getdval_str(layer['params'].get('pad'), stage, 'same').lower()
         stride = LasagneConvLayerBuilder.getdval_int(layer['params'].get('stride'), stage, 2)
         nonlinearity_type = LasagneConvLayerBuilder.getdval_str(layer['params'].get('nonlinearity'), stage).lower()
 
@@ -57,10 +56,10 @@ class LasagnePoolLayerBuilder(BaseLasagneLayerBuilder):
         pool_size = LasagnePoolLayerBuilder.getdval_int(layer['params'].get('pool_size'), stage, 1)
         stride = LasagnePoolLayerBuilder.getdval(layer['params'].get('stride'), stage)
         pad = LasagnePoolLayerBuilder.getdval_int(layer['params'].get('pad'), stage, 0)
-        ignore_border = LasagnePoolLayerBuilder.getdval_int(layer['params'].get('ignore_border'), stage, 1)
-        mode = LasagnePoolLayerBuilder.getdval_str(layer['params'].get('mode'), stage, 'max')
+        ignore_border = LasagnePoolLayerBuilder.getdval_str(layer['params'].get('ignore_border'), stage, 'true').lower()
+        mode = LasagnePoolLayerBuilder.getdval_str(layer['params'].get('mode'), stage, 'max').lower()
 
-        ignore_borderb = True if ignore_border == 1 else False
+        ignore_borderb = True if ignore_border == 'true' else False
 
         layer_type = LasagnePoolLayerBuilder.available_pool_layer_types.get(pool_type)
 

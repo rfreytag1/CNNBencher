@@ -1,9 +1,16 @@
+import numbers
+
 from CNNBenchUtils.DynamicValues.ValueTypes import *
 from CNNBenchUtils.ValueSelectors.ValueSelectors import *
 
 
 class BenchDescription(dict):
-    pass
+    def __init__(self):
+        super(BenchDescription, self).__init__()
+        self['name'] = ''
+        self['stages'] = 0
+        self['runs'] = 0
+        self['cnns'] = {}
 
 
 class BaseBenchDescriptionParser:
@@ -56,7 +63,24 @@ class BaseBenchDescriptionParser:
         if parse_func is None or not callable(parse_func):
             return None
 
-        return parse_func(param, self.stages, self.gapless_dvalues)
+        dval = parse_func(param, self.stages, self.gapless_dvalues)
+
+        if dval is None:
+            return None
+
+        pselected = param.get('selected')
+
+        self.bench_desc['selector'].register_dval(dval)
+        if isinstance(pselected, list):
+            for stagenum in pselected:
+                self.bench_desc['selector'].preselect(dval, stagenum)
+        elif isinstance(pselected, numbers.Number):
+            self.bench_desc['selector'].preselect(dval, pselected)
+        elif isinstance(pselected, str):
+            if pselected.lower() == 'true':
+                self.bench_desc['selector'].preselect(dval)
+
+        return dval
 
     def parse_selector(self, selector):
         selector_type = str(selector['selector'])
