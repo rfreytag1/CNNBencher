@@ -1,5 +1,4 @@
 import json
-import numbers
 
 from CNNBenchUtils.BenchDescriptionParsers.BaseBenchDescriptionParser import BaseBenchDescriptionParser
 

@@ -90,6 +90,7 @@ def calc_loss(prediction, targets):
     loss = T.mean(objectives.categorical_crossentropy(prediction, targets))
     return loss
 
+
 def calc_loss_multi(prediction, targets):
     # we need to clip predictions when calculating the log-loss
     prediction = T.clip(prediction, 0.0000001, 0.9999999)
@@ -97,10 +98,12 @@ def calc_loss_multi(prediction, targets):
     loss = T.mean(objectives.binary_crossentropy(prediction, targets))
     return loss
 
+
 def calc_accuracy(prediction, targets):
     # we can use the lasagne objective categorical_accuracy to determine the top1 single label accuracy
     a = T.mean(objectives.categorical_accuracy(prediction, targets, top_k=1))
     return a
+
 
 def calc_accuracy_multi(prediction, targets):
     # we can use the lasagne objective binary_accuracy to determine the multi label accuracy

@@ -1,13 +1,14 @@
 from CNNBenchUtils.CNNBuilders.BaseBuilder import BaseBuilder
 
 
-class BaseTrainingFunctionBuilder(BaseBuilder):
+class BaseFunctionBuilder(BaseBuilder):
     def __init__(self):
-        self.train_func = None
+        self.func = None
         self.func_desc = {}
         self.net = None
+        self.tensors = {}
 
-    def build(self, net, func_desc, stage=0):
+    def build(self, net, func_desc, tensors=None, stage=0):
         pass
 
     def rebuild(self, stage=0):

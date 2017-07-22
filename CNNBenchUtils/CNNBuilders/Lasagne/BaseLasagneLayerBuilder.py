@@ -74,7 +74,3 @@ class BaseLasagneLayerBuilder(BaseLayerBuilder):
             raise TypeError('Parameter "factory_func" must be callable!')
 
         BaseLasagneLayerBuilder.available_nonlinerities[fname] = factory_func
-
-    @staticmethod
-    def build(net, layer, stage):
-        pass
