@@ -126,6 +126,7 @@ if __name__ == '__main__':
     else:
         loss = calc_loss(prediction, targets) + l2_reg
 
+
     # we use dynamic learning rates which change after some epochs
     lr_dynamic = T.scalar(name='learning_rate')
 

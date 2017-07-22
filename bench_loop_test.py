@@ -14,7 +14,80 @@ import CNNBenchUtils.CNNBuilders.Lasagne.LasagneCNNBuilder as cnnb
 import CNNBenchUtils.CNNBuilders.Lasagne.LasagneTrainingFunctionBuilder as cnntrf
 import CNNBenchUtils.CNNBuilders.Lasagne.LasagneTestFunctionBuilder as cnntef
 
+BATCH_SIZE=128
+MULTI_LABEL=True
+TRAIN=[]
+'''
+def threadedBatchGenerator(generator, num_cached=10):
+    import queue
+    batch_queue = queue.Queue(maxsize=num_cached)
+    sentinel = object()  # guaranteed unique reference
 
+    # define producer (putting items into queue)
+    def producer():
+        for item in generator:
+            batch_queue.put(item)
+            batch_queue.put(sentinel)
+
+    # start producer (in a background thread)
+    import threading
+    thread = threading.Thread(target=producer)
+    thread.daemon = True
+    thread.start()
+
+    # run as consumer (read items from queue, in current thread)
+    item = batch_queue.get()
+    while item is not sentinel:
+        yield item
+        batch_queue.task_done()
+        item = batch_queue.get()
+
+
+def getDatasetChunk(split):
+    # get batch-sized chunks of image paths
+    for i in xrange(0, len(split), BATCH_SIZE):
+        yield split[i:i + BATCH_SIZE]
+
+
+def getNextImageBatch(split=TRAIN, doAugmentation=True, batchAugmentation=MULTI_LABEL):
+    # fill batch
+    for chunk in getDatasetChunk(split):
+
+        # allocate numpy arrays for image data and targets
+        x_b = np.zeros((BATCH_SIZE, IM_DIM, IM_SIZE[1], IM_SIZE[0]), dtype='float32')
+        y_b = np.zeros((BATCH_SIZE, NUM_CLASSES), dtype='float32')
+
+        ib = 0
+        for path in chunk:
+
+            try:
+
+                # load image data and class label from path
+                x, y = loadImageAndTarget(path, doAugmentation)
+
+                # pack into batch array
+                x_b[ib] = x
+                y_b[ib] = y
+                ib += 1
+
+            except:
+                continue
+
+        # trim to actual size
+        x_b = x_b[:ib]
+        y_b = y_b[:ib]
+
+        # same class augmentation?
+        if doAugmentation and SAME_CLASS_AUGMENTATION and x_b.shape[0] > 2:
+            x_b, y_b = getSameClassAugmentation(x_b, y_b)
+
+        # batch augmentation?
+        if batchAugmentation and x_b.shape[0] >= BATCH_SIZE // 2:
+            x_b, y_b = getAugmentedBatches(x_b, y_b)
+
+            # instead of return, we use yield
+            yield x_b, y_b
+'''
 stages = 10
 runs = 5
 
@@ -40,13 +113,16 @@ print(len(bench_desc['selector'].dynamic_values))
 netbuilder = cnnb.LasagneCNNBuilder()
 
 net = netbuilder.build(bench_desc['cnns']['TestCNN01'])
+print(type(net))
 
 train_func_builder = cnntrf.LasagneTrainingFunctionBuilder()
 test_func_builder = cnntef.LasagneTestFunctionBuilder()
 
 tensors = {}
+print(type(bench_desc['cnns']['TestCNN01']['training']['function']))
 train_func = train_func_builder.build(net, bench_desc['cnns']['TestCNN01']['training']['function'], tensors, 0)
 test_func = test_func_builder.build(net, bench_desc['cnns']['TestCNN01']['training']['function'], tensors, 0)
+test_func_builder.build(stage=1)
 
 lpd = open("layerparams.csv", 'w')
 lpd.write("stage;")
@@ -63,7 +139,7 @@ lpd.write("\n")
 
 for stage in range(0, 4):
     bench_desc['selector'].select_dvals(stage)
-    net = netbuilder.rebuild(stage)
+    net = netbuilder.build(stage=stage)
     print("===START PARAMETERS===")
     lpd.write(str(stage) + ";")
     for layerp in bench_desc['cnns']['TestCNN01']['layers']:

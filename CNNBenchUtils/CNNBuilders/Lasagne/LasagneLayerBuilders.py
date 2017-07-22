@@ -5,7 +5,7 @@ from CNNBenchUtils.CNNBuilders.Lasagne.BaseLasagneLayerBuilder import BaseLasagn
 
 class LasagneInputLayerBuilder(BaseLasagneLayerBuilder):
     @staticmethod
-    def build(net, layer, stage):
+    def build(net, layer, stage=0):
         batch_size = LasagneInputLayerBuilder.getdval(layer['params'].get('batch_size'), stage)
         width = LasagneInputLayerBuilder.getdval_int(layer['params'].get('width'), stage, 16)
         height = LasagneInputLayerBuilder.getdval_int(layer['params'].get('height'), stage, 16)
@@ -51,7 +51,7 @@ class LasagnePoolLayerBuilder(BaseLasagneLayerBuilder):
     }
 
     @staticmethod
-    def build(net, layer, stage):
+    def build(net, layer, stage=0):
         pool_type = LasagnePoolLayerBuilder.getdval_str(layer['params'].get('type'), stage, 'maxpool2d').lower()
         pool_size = LasagnePoolLayerBuilder.getdval_int(layer['params'].get('pool_size'), stage, 1)
         stride = LasagnePoolLayerBuilder.getdval(layer['params'].get('stride'), stage)
@@ -74,7 +74,7 @@ class LasagnePoolLayerBuilder(BaseLasagneLayerBuilder):
 
 class LasagneDenseLayerBuilder(BaseLasagneLayerBuilder):
     @staticmethod
-    def build(net, layer, stage):
+    def build(net, layer, stage=0):
         units = LasagneDenseLayerBuilder.getdval_int(layer['params'].get('units'), stage, 1)
         nonlinearity_type = LasagneDenseLayerBuilder.getdval_str(layer['params'].get('nonlinearity'), stage).lower()
 
@@ -86,7 +86,7 @@ class LasagneDenseLayerBuilder(BaseLasagneLayerBuilder):
 
 class LasagneDropoutLayerBuilder(BaseLasagneLayerBuilder):
     @staticmethod
-    def build(net, layer, stage):
+    def build(net, layer, stage=0):
         probability = LasagneDropoutLayerBuilder.getdval_float(layer['params'].get('probability'), stage, 0.5)
 
         return l.DropoutLayer(net, probability)
@@ -94,5 +94,5 @@ class LasagneDropoutLayerBuilder(BaseLasagneLayerBuilder):
 
 class LasagneBatchNormLayerBuilder(BaseLasagneLayerBuilder):
     @staticmethod
-    def build(net, layer, stage):
+    def build(net, layer, stage=0):
         return l.BatchNormLayer(net)

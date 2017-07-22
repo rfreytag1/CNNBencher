@@ -4,17 +4,16 @@ from CNNBenchUtils.CNNBuilders.BaseCNNBuilder import BaseCNNBuilder
 
 class LasagneCNNBuilder(BaseCNNBuilder):
     layer_builders = {
-        'input': LasagneInputLayerBuilder,
-        'conv': LasagneConvLayerBuilder,
-        'pooling': LasagnePoolLayerBuilder,
-        'dense': LasagneDenseLayerBuilder,
-        'dropout': LasagneDropoutLayerBuilder,
-        'batch_norm': LasagneBatchNormLayerBuilder
+        'input': LasagneInputLayerBuilder.build,
+        'conv': LasagneConvLayerBuilder.build,
+        'pooling': LasagnePoolLayerBuilder.build,
+        'dense': LasagneDenseLayerBuilder.build,
+        'dropout': LasagneDropoutLayerBuilder.build,
+        'batch_norm': LasagneBatchNormLayerBuilder.build
     }
 
-    def __init__(self):
-        super(LasagneCNNBuilder, self).__init__()
-        self.cnn_description = None
+    def __init__(self, cnn_desc=None):
+        super(LasagneCNNBuilder, self).__init__(cnn_desc)
 
     @staticmethod
     def register_layer_builder(layer_type, builder_func):
@@ -37,14 +36,11 @@ class LasagneCNNBuilder(BaseCNNBuilder):
         if layer_builder is None or not callable(layer_builder):
             return None
 
-        return layer_builder.build(net, layer, stage)
+        return layer_builder(net, layer, stage)
 
-    def build(self, cnn_desc, stage=0):
-        self.cnn_description = cnn_desc
+    def build(self, cnn_desc=None, stage=0):
+        super(LasagneCNNBuilder, self).build(cnn_desc, stage)
         net = None
-        for layer in self.cnn_description['layers']:
+        for layer in self.cnn_desc['layers']:
             net = self.__build_layer(net, layer, stage)
         return net
-
-    def rebuild(self, stage=0):
-        return self.build(self.cnn_description, stage)
