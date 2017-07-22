@@ -1,4 +1,3 @@
-from lasagne import updates
 from lasagne import objectives
 from lasagne import regularization
 from lasagne import layers as l
@@ -49,8 +48,12 @@ class LasagneTrainingFunctionBuilder(BaseTrainingFunctionBuilder):
         a = T.mean(objectives.binary_accuracy(prediction, targets))
         return a
 
-    @staticmethod
-    def build(net, func, stage=0):
+    def __init__(self):
+        super(LasagneTrainingFunctionBuilder, self).__init__()
+
+    def build(self, net, func, stage=0):
+        self.func_desc = func
+        self.net = net
         update_type = LasagneTrainingFunctionBuilder.getdval_str(func['params'].get('update.type'), stage, 'adam').lower()
         update_b1 = LasagneTrainingFunctionBuilder.getdval(func['params'].get('update.beta1'), stage)
         update_b2 = LasagneTrainingFunctionBuilder.getdval(func['params'].get('update.beta2'), stage)
@@ -85,4 +88,9 @@ class LasagneTrainingFunctionBuilder(BaseTrainingFunctionBuilder):
 
         param_updates = update_func('adam', loss, params, lr_dynamic, update_b1, update_b2, update_epsilon, update_rho, update_momentum)
 
-        return theano.function([l.get_all_layers(net)[0].input_var, targets, lr_dynamic], loss, updates=param_updates)
+        self.train_func = theano.function([l.get_all_layers(net)[0].input_var, targets, lr_dynamic], loss, updates=param_updates)
+
+        return self.train_func
+
+    def rebuild(self, stage=0):
+        return self.build(self.net, self.func_desc, stage)

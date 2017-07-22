@@ -40,7 +40,9 @@ netbuilder = cnnb.LasagneCNNBuilder()
 
 net = netbuilder.build(bench_desc['cnns']['TestCNN01'])
 
-train_func = cnntf.LasagneTrainingFunctionBuilder.build(net, bench_desc['cnns']['TestCNN01']['training']['function'])
+train_func_builder = cnntf.LasagneTrainingFunctionBuilder()
+
+train_func = train_func_builder.build(net, bench_desc['cnns']['TestCNN01']['training']['function'])
 
 lpd = open("layerparams.csv", 'w')
 lpd.write("stage;")
