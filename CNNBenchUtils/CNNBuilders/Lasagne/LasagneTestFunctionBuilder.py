@@ -24,13 +24,13 @@ class LasagneTestFunctionBuilder(BaseLasagneFunctionBuilder):
             targets = t.matrix('targets', dtype=theano.config.floatX)
             self.tensors['targets'] = targets
 
-        # we use L2 Norm for regularization
-        l2_reg = regularization.regularize_layer_params(self.net, regularization.l2) * l2_reg_w
         # get the network output
         prediction = l.get_output(self.net)
 
         loss = self.tensors.get('loss')
         if loss is None:
+            # we use L2 Norm for regularization(for now)
+            l2_reg = regularization.regularize_layer_params(self.net, regularization.l2) * l2_reg_w
             if multilabelb:
                 loss = LasagneTestFunctionBuilder.calc_loss_multi(prediction, targets) + l2_reg
             else:

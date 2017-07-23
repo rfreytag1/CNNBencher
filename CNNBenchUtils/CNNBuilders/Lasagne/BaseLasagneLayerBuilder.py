@@ -1,6 +1,6 @@
 from lasagne import nonlinearities
 
-from CNNBenchUtils.CNNBuilders.Lasagne.LasagneWeightInitFactories import *
+from CNNBenchUtils.CNNBuilders.Lasagne.LasagneWeightInitBuilders import *
 from CNNBenchUtils.CNNBuilders.BaseLayerBuilder import BaseLayerBuilder
 
 
@@ -19,15 +19,15 @@ class BaseLasagneLayerBuilder(BaseLayerBuilder):
     }
 
     available_weights_factories = {
-        'constant': ConstantWeightInitFactory.instance,
-        'uniform': UniformWeightInitFactory.instance,
-        'normal': NormalWeightInitFactory.instance,
-        'heuniform': HeUniformWeightInitFactory.instance,
-        'henormal': HeNormalWeightInitFactory.instance,
-        'glorotuniform': GlorotUniformWeightInitFactory.instance,
-        'glorotnormal': GlorotNormalWeightInitFactory.instance,
-        'sparse': SparseWeightInitFactory.instance,
-        'ortho': OrthoWeightInitFactory.instance,
+        'constant': ConstantWeightInitBuilder.build,
+        'uniform': UniformWeightInitBuilder.build,
+        'normal': NormalWeightInitBuilder.build,
+        'heuniform': HeUniformWeightInitBuilder.build,
+        'henormal': HeNormalWeightInitBuilder.build,
+        'glorotuniform': GlorotUniformWeightInitBuilder.build,
+        'glorotnormal': GlorotNormalWeightInitBuilder.build,
+        'sparse': SparseWeightInitBuilder.build,
+        'ortho': OrthoWeightInitBuilder.build,
     }
 
     @staticmethod

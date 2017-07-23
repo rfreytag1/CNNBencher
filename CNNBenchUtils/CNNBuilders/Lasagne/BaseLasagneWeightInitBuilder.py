@@ -1,7 +1,7 @@
 from lasagne import init
 
 
-class BaseLasagneWeightInitFactory:
+class BaseLasagneWeightInitBuilder:
     standard_weights_init = {
         'constant': init.Constant,
         'uniform': init.Uniform,
@@ -18,5 +18,5 @@ class BaseLasagneWeightInitFactory:
     create instance of desired weight initializer with sane defaults if no parameters were passed 
     '''
     @staticmethod
-    def instance(wtype, value=None, gain=None, stddev=None, mean=None, nrange=None, sparsity=None):
+    def build(wtype, value=None, gain=None, stddev=None, mean=None, nrange=None, sparsity=None):
         pass

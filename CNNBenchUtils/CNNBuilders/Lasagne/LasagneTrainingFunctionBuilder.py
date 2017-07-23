@@ -5,45 +5,59 @@ import theano
 import theano.tensor as t
 
 from CNNBenchUtils.CNNBuilders.Lasagne.BaseLasagneFunctionBuilder import BaseLasagneFunctionBuilder
-from CNNBenchUtils.CNNBuilders.Lasagne.LasagneUpdateFactories import *
+from CNNBenchUtils.CNNBuilders.Lasagne.LasagneUpdateBuilders import *
 
 
 class LasagneTrainingFunctionBuilder(BaseLasagneFunctionBuilder):
     update_factories = {
-        'adam': AdamUpdatesFactory.instance,
-        'adamax': AdamaxUpdatesFactory.instance,
-        'adadelta': AdadeltaUpdatesFactory.instance,
-        'adagrad': AdagradUpdatesFactory.instance,
-        'momentum': MomentumUpdatesFactory.instance,
-        'nesterov': NesterovMomentumUpdatesFactory.instance,
-        'sgd': SGDUpdatesFactory.instance,
-        'rms': RMSUpdatesFactory.instance
+        'adam': AdamUpdatesBuilder.build,
+        'adamax': AdamaxUpdatesBuilder.build,
+        'adadelta': AdadeltaUpdatesBuilder.build,
+        'adagrad': AdagradUpdatesBuilder.build,
+        'momentum': MomentumUpdatesBuilder.build,
+        'nesterov': NesterovMomentumUpdatesBuilder.build,
+        'sgd': SGDUpdatesBuilder.build,
+        'rms': RMSUpdatesBuilder.build
     }
 
     def __init__(self):
         super(LasagneTrainingFunctionBuilder, self).__init__()
 
-    '''
-    net - neural net on which the training function should act
-    func - dict with the function build description/parameters
-    tensors - dict with tensors that should be used. if particular tensor doesn't exist yet, an instance will be stored for later use
-    stage - benchmark stage to use as basis for parameter value selection
-    
-    returns callable train function
-    '''
+    @staticmethod
+    def add_update_factory(ufname, fact_func):
+        if not isinstance(ufname, str):
+            raise TypeError('Argument "ufname" must be a string!')
+        if not callable(fact_func):
+            raise TypeError('Argument "fact_funct" must be callable!')
+
+        LasagneTrainingFunctionBuilder.update_factories[ufname] = fact_func
+
     def build(self, net=None, func_desc=None, tensors=None, stage=0):
+        '''
+        builds the training function based on the function description given in the benchmark file
+        :param net: neural net to build the function for. Must be a lasagne.layers.Layer derived type
+        :param func_desc: part of the benchmark description that describes the training function as a dict.
+        :param tensors: dict of tensors. Existing tensors will be used, missing will be added and since this is mutable the caller will have an updated dict for further usage
+        :param stage: benchmark stage for which to build
+        :return: training function as a callable and the tensors dict
+        '''
         super(LasagneTrainingFunctionBuilder, self).build(net, func_desc, tensors, stage)
 
+        # get parameters to determine how to build the training function
         update_type = LasagneTrainingFunctionBuilder.getdval_str(self.func_desc['params'].get('update.type'), stage, 'adam').lower()
-        update_b1 = LasagneTrainingFunctionBuilder.getdval(self.func_desc['params'].get('update.beta1'), stage)
-        update_b2 = LasagneTrainingFunctionBuilder.getdval(self.func_desc['params'].get('update.beta2'), stage)
-        update_epsilon = LasagneTrainingFunctionBuilder.getdval(self.func_desc['params'].get('update.epsilon'), stage)
-        update_rho = LasagneTrainingFunctionBuilder.getdval(self.func_desc['params'].get('update.rho'), stage)
-        update_momentum = LasagneTrainingFunctionBuilder.getdval(self.func_desc['params'].get('update.momentum'), stage)
-        l2_reg_w = LasagneTrainingFunctionBuilder.getdval_float(self.func_desc['params'].get('regularization.l2_weight', 1e-4), stage)
-        multilabel = LasagneTrainingFunctionBuilder.getdval_str(self.func_desc['params'].get('loss.multilabel'), stage, 'false').lower()
-        multilabelb = True if multilabel == 'true' else False
 
+        # pack all 'update.*' parameters into a dict to be used to instantiate the update function
+        update_params = {}
+        for pkey, pdval in self.func_desc['params'].items():
+            if str(pkey).startswith('update.'):
+                # for the key we just keep everything after the dot
+                # the value is the current value of the dynamic value in that stage
+                update_params[pkey[pkey.index('.')+1:]] = pdval.value(stage)
+
+        l2_reg_w = LasagneTrainingFunctionBuilder.getdval_float(self.func_desc['params'].get('regularization.l2_weight', 1e-4), stage)
+        multilabel = bool(LasagneTrainingFunctionBuilder.getdval_str(self.func_desc['params'].get('loss.multilabel'), stage, 'false').lower())
+
+        # determine which update function to use. If specified is unavailable, default to adam
         update_func = LasagneTrainingFunctionBuilder.update_factories.get(update_type)
         if update_func is None:
             update_func = LasagneTrainingFunctionBuilder.update_factories.get('adam')
@@ -53,29 +67,29 @@ class LasagneTrainingFunctionBuilder(BaseLasagneFunctionBuilder):
             targets = t.matrix('targets', dtype=theano.config.floatX)
             self.tensors['targets'] = targets
 
-        # we use L2 Norm for regularization
+        # we use L2 Norm for regularization(static for now)
         l2_reg = regularization.regularize_layer_params(self.net, regularization.l2) * l2_reg_w
-        # get the network output
         prediction = l.get_output(self.net)
 
         loss = self.tensors.get('loss')
         if loss is None:
-            if multilabelb:
+            if multilabel:
                 loss = LasagneTrainingFunctionBuilder.calc_loss_multi(prediction, targets) + l2_reg
             else:
                 loss = LasagneTrainingFunctionBuilder.calc_loss(prediction, targets) + l2_reg
             self.tensors['loss'] = loss
 
-        # we use dynamic learning rates which change after some epochs
+        # use a tensor so we can adapt the learning rate
         lr_dynamic = self.tensors.get('learning_rate')
         if lr_dynamic is None:
             lr_dynamic = t.scalar(name='learning_rate')
             self.tensors['learning_rate'] = lr_dynamic
 
-        # get all trainable parameters (weights) of our net
+        # get all trainable parameters (weights) of the net
         params = l.get_all_params(self.net, trainable=True)
 
-        param_updates = update_func('adam', loss, params, lr_dynamic, update_b1, update_b2, update_epsilon, update_rho, update_momentum)
+        # call the previously determined update function(through its wrapper
+        param_updates = update_func(loss, params, lr_dynamic, **update_params)
 
         self.func = theano.function([l.get_all_layers(self.net)[0].input_var, targets, lr_dynamic], loss, updates=param_updates)
 

@@ -49,32 +49,32 @@
 							"value": "lerp"
 						},
 						{
-							"key": "updates.type",
+							"key": "update.type",
 							"type": "static",
 							"value": "adam"
 						},
 						{
-							"key": "updates.beta1",
+							"key": "update.beta1",
 							"type": "static",
 							"value": 0.01
 						},
 						{
-							"key": "updates.beta2",
+							"key": "update.beta2",
 							"type": "static",
 							"value": 0.1
 						},
 						{
-							"key": "updates.epsilon",
+							"key": "update.epsilon",
 							"type": "static",
 							"value": 0.0001
 						},
 						{
-							"key": "updates.rho",
+							"key": "update.rho",
 							"type": "static",
 							"value": 0.0001
 						},
 						{
-							"key": "updates.momentum",
+							"key": "update.momentum",
 							"type": "static",
 							"value": 1.0
 						},
