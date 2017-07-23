@@ -103,7 +103,6 @@ lfh.setLevel(logging.DEBUG)
 default_log.addHandler(lfh)
 
 default_log.warning("Tis' just a test!", {'lineno': 2})
-
 bdp = cnnbp.BenchDescriptionJSONParser(True)
 bench_desc = bdp.parse("./sample_cnn_bench1.json")
 
@@ -113,13 +112,11 @@ print(len(bench_desc['selector'].dynamic_values))
 netbuilder = cnnb.LasagneCNNBuilder()
 
 net = netbuilder.build(bench_desc['cnns']['TestCNN01'])
-print(type(net))
 
 train_func_builder = cnntrf.LasagneTrainingFunctionBuilder()
 test_func_builder = cnntef.LasagneTestFunctionBuilder()
 
 tensors = {}
-print(type(bench_desc['cnns']['TestCNN01']['training']['function']))
 train_func = train_func_builder.build(net, bench_desc['cnns']['TestCNN01']['training']['function'], tensors, 0)
 test_func = test_func_builder.build(net, bench_desc['cnns']['TestCNN01']['training']['function'], tensors, 0)
 test_func_builder.build(stage=1)
@@ -138,17 +135,25 @@ for layerp in bench_desc['cnns']['TestCNN01']['layers']:
 lpd.write("\n")
 
 for stage in range(0, 4):
+    # make dvalue selection
     bench_desc['selector'].select_dvals(stage)
+    # build net
     net = netbuilder.build(stage=stage)
-    print("===START PARAMETERS===")
+    train_func = train_func_builder.build(stage=stage)
+    test_func = test_func_builder.build(stage=stage)
+
+    # write current values to file
     lpd.write(str(stage) + ";")
     for layerp in bench_desc['cnns']['TestCNN01']['layers']:
         for lparmname, lparmval in layerp['params'].items():
             lpd.write(str(lparmval) + ";")
     lpd.write("\n")
-    print("===END PARAMETERS===")
     print("MODEL HAS", (sum(hasattr(layer, 'W') for layer in l.get_all_layers(net))), "WEIGHTED LAYERS")
     print("MODEL HAS", l.count_params(net), "PARAMS")
+
+    for run in range(0, 5):
+        # do training and testing here
+        pass
 
 '''
 bdfp = open("./sample_cnn_bench1.json", "r")

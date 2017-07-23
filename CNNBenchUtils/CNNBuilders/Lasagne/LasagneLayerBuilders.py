@@ -11,7 +11,7 @@ class LasagneInputLayerBuilder(BaseLasagneLayerBuilder):
         height = LasagneInputLayerBuilder.getdval_int(layer['params'].get('height'), stage, 16)
         depth = LasagneInputLayerBuilder.getdval_int(layer['params'].get('depth'), stage, 1)
 
-        return l.InputLayer((batch_size, depth, width, height))
+        return l.InputLayer((batch_size, depth, height, width))
 
 
 class LasagneConvLayerBuilder(BaseLasagneLayerBuilder):
@@ -31,7 +31,7 @@ class LasagneConvLayerBuilder(BaseLasagneLayerBuilder):
         nonlinearity_type = LasagneConvLayerBuilder.getdval_str(layer['params'].get('nonlinearity'), stage).lower()
 
         nonlinearity = LasagneConvLayerBuilder.get_nonlinearity(nonlinearity_type)
-        weights = LasagneConvLayerBuilder.get_weights_initw(layer['params'])
+        weights = LasagneConvLayerBuilder.get_weights_init(layer['params'])
 
         layertype = LasagneConvLayerBuilder.available_conv_layer_types.get(conv_type)
         if layertype is None:
@@ -56,20 +56,17 @@ class LasagnePoolLayerBuilder(BaseLasagneLayerBuilder):
         pool_size = LasagnePoolLayerBuilder.getdval_int(layer['params'].get('pool_size'), stage, 1)
         stride = LasagnePoolLayerBuilder.getdval(layer['params'].get('stride'), stage)
         pad = LasagnePoolLayerBuilder.getdval_int(layer['params'].get('pad'), stage, 0)
-        ignore_border = LasagnePoolLayerBuilder.getdval_str(layer['params'].get('ignore_border'), stage, 'true').lower()
+        ignore_border = bool(LasagnePoolLayerBuilder.getdval_str(layer['params'].get('ignore_border'), stage, 'true').lower())
         mode = LasagnePoolLayerBuilder.getdval_str(layer['params'].get('mode'), stage, 'max').lower()
-
-        ignore_borderb = True if ignore_border == 'true' else False
-
         layer_type = LasagnePoolLayerBuilder.available_pool_layer_types.get(pool_type)
 
         if layer_type is None:
             layer_type = LasagnePoolLayerBuilder.available_pool_layer_types.get('maxpool2d')
 
         if pool_type.startswith('max'):
-            return layer_type(net, pool_size, stride, pad, ignore_borderb)
+            return layer_type(net, pool_size, stride, pad, ignore_border)
         else:
-            return layer_type(net, pool_size, stride, pad, ignore_borderb, mode)
+            return layer_type(net, pool_size, stride, pad, ignore_border, mode)
 
 
 class LasagneDenseLayerBuilder(BaseLasagneLayerBuilder):
@@ -79,7 +76,7 @@ class LasagneDenseLayerBuilder(BaseLasagneLayerBuilder):
         nonlinearity_type = LasagneDenseLayerBuilder.getdval_str(layer['params'].get('nonlinearity'), stage).lower()
 
         nonlinearity = LasagneDenseLayerBuilder.get_nonlinearity(nonlinearity_type)
-        weights = LasagneConvLayerBuilder.get_weights_initw(layer['params'])
+        weights = LasagneConvLayerBuilder.get_weights_init(layer['params'])
 
         return l.DenseLayer(net, units, W=weights, nonlinearity=nonlinearity)
 

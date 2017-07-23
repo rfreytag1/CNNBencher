@@ -1,22 +1,7 @@
-from lasagne import init
-
-
 class BaseLasagneWeightInitBuilder:
-    standard_weights_init = {
-        'constant': init.Constant,
-        'uniform': init.Uniform,
-        'normal': init.Normal,
-        'henormal': init.HeNormal,
-        'heuniform': init.HeUniform,
-        'glorotnormal': init.GlorotNormal,
-        'glorotuniform': init.GlorotUniform,
-        'sparse': init.Sparse,
-        'ortho': init.Orthogonal
-    }
-
     '''
-    create instance of desired weight initializer with sane defaults if no parameters were passed 
+    call weight initializer with sane defaults if no parameters were passed
     '''
     @staticmethod
-    def build(wtype, value=None, gain=None, stddev=None, mean=None, nrange=None, sparsity=None):
+    def build(**kwargs):
         pass

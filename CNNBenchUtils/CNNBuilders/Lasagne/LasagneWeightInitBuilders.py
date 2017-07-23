@@ -1,112 +1,70 @@
+from lasagne import init
+
 from CNNBenchUtils.CNNBuilders.Lasagne.BaseLasagneWeightInitBuilder import BaseLasagneWeightInitBuilder
 
 
 class ConstantWeightInitBuilder(BaseLasagneWeightInitBuilder):
     @staticmethod
-    def build(wtype, value=None, gain=None, stddev=None, mean=None, nrange=None, sparsity=None):
-        actual_type = 'constant'
-        if str(wtype).lower() != actual_type:
-            return None
-        if value is None:
-            value = 0.0
-
-        return BaseLasagneWeightInitBuilder.standard_weights_init.get(actual_type)(value)
+    def build(**kwargs):
+        value = kwargs.get('value', 0.0)
+        return init.Constant(value)
 
 
 class UniformWeightInitBuilder(BaseLasagneWeightInitBuilder):
     @staticmethod
-    def build(wtype, value=None, gain=None, stddev=None, mean=None, nrange=None, sparsity=None):
-        actual_type = 'uniform'
-        if str(wtype).lower() != actual_type:
-            return None
-
-        nrange = nrange if nrange is not None else 0.01
-        mean = mean if mean is not None else 0.0
-
-        return BaseLasagneWeightInitBuilder.standard_weights_init.get(actual_type)(nrange, stddev, mean)
+    def build(**kwargs):
+        nrange = kwargs.get('nrange', 0.01)
+        mean = kwargs.get('mean', 0.0)
+        stddev = kwargs.get('stddev')
+        return init.Uniform(nrange, stddev, mean)
 
 
 class NormalWeightInitBuilder(BaseLasagneWeightInitBuilder):
     @staticmethod
-    def build(wtype, value=None, gain=None, stddev=None, mean=None, nrange=None, sparsity=None):
-        actual_type = 'normal'
-        if str(wtype).lower() != actual_type:
-            return None
-
-        stddev = stddev if stddev is not None else 0.01
-        mean = mean if mean is not None else 0.0
-
-        return BaseLasagneWeightInitBuilder.standard_weights_init.get(actual_type)(stddev, mean)
+    def build(**kwargs):
+        stddev = kwargs.get('stddev', 0.01)
+        mean = kwargs.get('mean', 0.0)
+        return init.Normal(stddev, mean)
 
 
 class HeNormalWeightInitBuilder(BaseLasagneWeightInitBuilder):
     @staticmethod
-    def build(wtype, value=None, gain=None, stddev=None, mean=None, nrange=None, sparsity=None):
-        actual_type = 'henormal'
-        if str(wtype).lower() != actual_type:
-            return None
-
-        gain = gain if gain is not None else 0.01
-
-        return BaseLasagneWeightInitBuilder.standard_weights_init.get(actual_type)(gain)
+    def build(**kwargs):
+        gain = kwargs.get('gain', 0.01)
+        return init.HeNormal(gain)
 
 
 class HeUniformWeightInitBuilder(BaseLasagneWeightInitBuilder):
     @staticmethod
-    def build(wtype, value=None, gain=None, stddev=None, mean=None, nrange=None, sparsity=None):
-        actual_type = 'heuniform'
-        if str(wtype).lower() != actual_type:
-            return None
-
-        gain = gain if gain is not None else 0.01
-
-        return BaseLasagneWeightInitBuilder.standard_weights_init.get(actual_type)(gain)
+    def build(**kwargs):
+        gain = kwargs.get('gain', 0.01)
+        return init.HeUniform(gain)
 
 
 class GlorotNormalWeightInitBuilder(BaseLasagneWeightInitBuilder):
     @staticmethod
-    def build(wtype, value=None, gain=None, stddev=None, mean=None, nrange=None, sparsity=None):
-        actual_type = 'glorotnormal'
-        if str(wtype).lower() != actual_type:
-            return None
-
-        gain = gain if gain is not None else 0.01
-
-        return BaseLasagneWeightInitBuilder.standard_weights_init.get(actual_type)(gain)
+    def build(**kwargs):
+        gain = kwargs.get('gain', 0.01)
+        return init.GlorotNormal(gain)
 
 
 class GlorotUniformWeightInitBuilder(BaseLasagneWeightInitBuilder):
     @staticmethod
-    def build(wtype, value=None, gain=None, stddev=None, mean=None, nrange=None, sparsity=None):
-        actual_type = 'glorotuniform'
-        if str(wtype).lower() != actual_type:
-            return None
-
-        gain = gain if gain is not None else 0.01
-
-        return BaseLasagneWeightInitBuilder.standard_weights_init.get(actual_type)(gain)
+    def build(**kwargs):
+        gain = kwargs.get('gain', 0.01)
+        return init.GlorotUniform(gain)
 
 
 class SparseWeightInitBuilder(BaseLasagneWeightInitBuilder):
     @staticmethod
-    def build(wtype, value=None, gain=None, stddev=None, mean=None, nrange=None, sparsity=None):
-        actual_type = 'sparse'
-        if str(wtype).lower() != actual_type:
-            return None
-
-        stddev = stddev if stddev is not None else 0.01
-        sparsity = sparsity if sparsity is not None else 0.1
-
-        return BaseLasagneWeightInitBuilder.standard_weights_init.get(actual_type)(sparsity, stddev)
+    def build(**kwargs):
+        stddev = kwargs.get('stddev', 0.01)
+        sparsity = kwargs.get('sparsity', 0.1)
+        return init.Sparse(sparsity, stddev)
 
 
 class OrthoWeightInitBuilder(BaseLasagneWeightInitBuilder):
     @staticmethod
-    def build(wtype, value=None, gain=None, stddev=None, mean=None, nrange=None, sparsity=None):
-        actual_type = 'ortho'
-        if str(wtype).lower() != actual_type:
-            return None
-
-        gain = gain if gain is not None else 0.01
-
-        return BaseLasagneWeightInitBuilder.standard_weights_init.get(actual_type)(gain)
+    def build(**kwargs):
+        gain = kwargs.get('gain', 0.01)
+        return init.Orthogonal(gain)

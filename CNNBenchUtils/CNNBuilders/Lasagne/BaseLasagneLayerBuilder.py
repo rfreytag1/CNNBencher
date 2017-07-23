@@ -18,7 +18,7 @@ class BaseLasagneLayerBuilder(BaseLayerBuilder):
         'tanh': nonlinearities.tanh
     }
 
-    available_weights_factories = {
+    available_weights_builders = {
         'constant': ConstantWeightInitBuilder.build,
         'uniform': UniformWeightInitBuilder.build,
         'normal': NormalWeightInitBuilder.build,
@@ -41,46 +41,26 @@ class BaseLasagneLayerBuilder(BaseLayerBuilder):
         return nonlinearity if nonlinearity is not None else nonlinearities.elu
 
     @staticmethod
-    def get_weights_init(wtype, value=None, gain=None, stddev=None, mean=None, nrange=None, sparsity=None):
-        '''
-        returns the desired weights initializer or a sane default.
-        :param wtype: weights initializer to use
-        :param value: see lasagne.init documentation for this and params below
-        :param gain:
-        :param stddev:
-        :param mean:
-        :param nrange:
-        :param sparsity:
-        :return:
-        '''
-        winit_factory = BaseLasagneLayerBuilder.available_weights_factories.get(str(wtype).lower())
-        if winit_factory is None:
-            winit_factory = BaseLasagneLayerBuilder.available_weights_factories.get('henormal')
-            wtype = 'henormal'
-
-        gain = gain if gain is not None else 0.01
-
-        winit = winit_factory(wtype, value, gain, stddev, mean, nrange, sparsity)
-
-        return winit if winit is not None else BaseLasagneLayerBuilder.available_weights_factories.get('henormal')(gain)
-
-    @staticmethod
-    def get_weights_initw(lparams, stage=0):
+    def get_weights_init(lparams, stage=0):
         '''
         wrapper for get_weights_init which uses a dict from a benchmark description instead
         :param lparams: parameters to be used
         :param stage: benchmark stage
         :return:
         '''
-        weights_type = BaseLasagneLayerBuilder.getdval_str(lparams.get('weights.type'), stage).lower()
-        weights_gain = BaseLasagneLayerBuilder.getdval(lparams.get('weights.gain'), stage)
-        weights_stddev = BaseLasagneLayerBuilder.getdval(lparams.get('weights.stddev'), stage)
-        weights_mean = BaseLasagneLayerBuilder.getdval(lparams.get('weights.mean'), stage)
-        weights_range = BaseLasagneLayerBuilder.getdval(lparams.get('weights.range'), stage)
-        weights_value = BaseLasagneLayerBuilder.getdval(lparams.get('weights.value'), stage)
-        weights_sparsity = BaseLasagneLayerBuilder.getdval(lparams.get('weights.sparsity'), stage)
 
-        return BaseLasagneLayerBuilder.get_weights_init(weights_type, weights_value, weights_gain, weights_stddev, weights_mean, weights_range, weights_sparsity)
+        weight_params = {}
+        for pkey, pdval in lparams.items():
+            if pkey.startswith('weights.'):
+                weight_params[pkey[pkey.index('.')+1:]] = pdval.value(stage)
+
+        winit_factory = BaseLasagneLayerBuilder.available_weights_builders.get(str(weight_params.get('type', 'henormal')).lower())
+        if winit_factory is None:
+            winit_factory = BaseLasagneLayerBuilder.available_weights_builders.get('henormal')
+
+        winit = winit_factory(**weight_params)
+
+        return winit
 
     @staticmethod
     def register_nonlinearity(nname, nlin_func):
@@ -98,7 +78,7 @@ class BaseLasagneLayerBuilder(BaseLayerBuilder):
         BaseLasagneLayerBuilder.available_nonlinerities[nname] = nlin_func
 
     @staticmethod
-    def register_weight_factory(fname, factory_func):
+    def register_weight_builder(fname, factory_func):
         '''
         helper function to safely and correctly add new factories for weight initializers
         :param fname: initializer name(as usable in the benchmark description file)
