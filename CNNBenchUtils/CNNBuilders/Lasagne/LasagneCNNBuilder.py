@@ -1,3 +1,6 @@
+import hashlib
+import time
+
 from CNNBenchUtils.CNNBuilders.Lasagne.LasagneLayerBuilders import *
 from CNNBenchUtils.CNNBuilders.BaseCNNBuilder import BaseCNNBuilder
 
@@ -25,18 +28,25 @@ class LasagneCNNBuilder(BaseCNNBuilder):
 
         LasagneCNNBuilder.layer_builders[layer_type] = builder_func
 
-    def __build_layer(self, net, layer, stage=0):
-        layer_type = str(layer.get('type', 'none')).lower()
+    def __build_layer(self, net, layer_desc, stage=0):
+        layer_type = str(layer_desc.get('type', 'none')).lower()
 
         if layer_type == 'none':
             return
 
         layer_builder = LasagneCNNBuilder.layer_builders.get(layer_type)
-
         if layer_builder is None or not callable(layer_builder):
             return None
 
-        return layer_builder(net, layer, stage)
+        layer = layer_builder(net, layer_desc, stage)
+        if layer is not None:
+            layer_name = layer_desc.get('name')
+            if layer_name is None:
+                hobj = hashlib.sha1(time.process_time().hex().encode())
+                layer_name = layer_type + '_' + hobj.hexdigest()
+            self.layers[layer_name] = layer
+
+        return layer
 
     def build(self, cnn_desc=None, stage=0):
         super(LasagneCNNBuilder, self).build(cnn_desc, stage)

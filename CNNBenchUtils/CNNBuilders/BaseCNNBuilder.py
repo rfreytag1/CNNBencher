@@ -9,6 +9,8 @@ class BaseCNNBuilder(BaseBuilder):
         elif cnn_desc is not None:
             raise TypeError('Argument "cnn_desc" must be a dict!')
 
+        self.layers = {}
+
     def build(self, cnn_desc=None, stage=0):
         if cnn_desc is not None and not isinstance(cnn_desc, dict):
             raise TypeError('Argument "cnn_desc" must be a dict!')

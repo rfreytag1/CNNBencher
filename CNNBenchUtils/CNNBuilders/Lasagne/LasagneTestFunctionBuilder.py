@@ -8,8 +8,8 @@ from CNNBenchUtils.CNNBuilders.Lasagne.BaseLasagneFunctionBuilder import BaseLas
 
 
 class LasagneTestFunctionBuilder(BaseLasagneFunctionBuilder):
-    def __init__(self):
-        super(LasagneTestFunctionBuilder, self).__init__()
+    def __init__(self, net=None, func_desc=None, tensors=None):
+        super(LasagneTestFunctionBuilder, self).__init__(net, func_desc, tensors)
 
     def build(self, net=None, func_desc=None, tensors=None, stage=0):
         super(LasagneTestFunctionBuilder, self).build(net, func_desc, tensors, stage)

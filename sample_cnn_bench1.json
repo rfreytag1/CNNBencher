@@ -6,7 +6,9 @@
 		{
 			"filename": "test01.zip",
 			"sample_size": 5000,
-			"classes": 1500
+			"classes": 1500,
+			"image_dimensions.w": 512,
+			"image_dimensions.h": 256
 		},
 		{
 			"filename": "test02.zip",
@@ -106,12 +108,12 @@
 						{
 							"key": "width",
 							"type": "static",
-							"value": 256
+							"value": 512
 						},
 						{
 							"key": "height",
 							"type": "static",
-							"value": 512
+							"value": 256
 						},
 						{
 							"key": "depth",

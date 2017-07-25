@@ -20,8 +20,8 @@ class LasagneTrainingFunctionBuilder(BaseLasagneFunctionBuilder):
         'rms': RMSUpdatesBuilder.build
     }
 
-    def __init__(self):
-        super(LasagneTrainingFunctionBuilder, self).__init__()
+    def __init__(self, net=None, func_desc=None, tensors=None):
+        super(LasagneTrainingFunctionBuilder, self).__init__(net, func_desc, tensors)
 
     @staticmethod
     def add_update_factory(ufname, fact_func):
