@@ -21,5 +21,7 @@ class BaseCNNBuilder(BaseBuilder):
         if self.cnn_desc is None:
             raise ValueError('No neural net description specified!')
 
+        self.layers.clear()
+
         return None
 

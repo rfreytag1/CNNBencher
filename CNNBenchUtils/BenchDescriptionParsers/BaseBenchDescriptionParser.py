@@ -56,7 +56,7 @@ class BaseBenchDescriptionParser:
             raise TypeError('Parameter "parser_func" must be callable!')
         self.selector_parsers[stype] = parser_func
 
-    def parse_param(self, param):
+    def parse_param(self, param, cnn_name):
         param_type = str(param['type']).lower()
         parse_func = self.param_parsers.get(param_type)
 
@@ -70,15 +70,15 @@ class BaseBenchDescriptionParser:
 
         pselected = param.get('selected')
 
-        self.bench_desc['selector'].register_dval(dval)
+        self.bench_desc['cnns'][cnn_name]['selector'].register_dval(dval)
         if isinstance(pselected, list):
             for stagenum in pselected:
-                self.bench_desc['selector'].preselect(dval, stagenum)
+                self.bench_desc['cnns'][cnn_name]['selector'].preselect(dval, stagenum)
         elif isinstance(pselected, numbers.Number):
-            self.bench_desc['selector'].preselect(dval, pselected)
+            self.bench_desc['cnns'][cnn_name]['selector'].preselect(dval, pselected)
         elif isinstance(pselected, str):
             if pselected.lower() == 'true':
-                self.bench_desc['selector'].preselect(dval)
+                self.bench_desc['cnns'][cnn_name]['selector'].preselect(dval)
 
         return dval
 

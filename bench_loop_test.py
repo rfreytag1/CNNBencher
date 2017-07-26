@@ -314,10 +314,13 @@ class CachedImageLoader(CachedFileLoader):
         except:
             print("File \"", filename, "\" is not an image!")
 
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        if img is None:
+            return None
+
+        #img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
         # resize to conv input size
-        img = cv2.resize(img, (IM_SIZE[0], IM_SIZE[1]))
+        img = cv2.resize(img, (512, 256))
 
         # convert to floats between 0 and 1
         img = np.asarray(img / 255., dtype='float32')
@@ -367,16 +370,34 @@ default_log.warning("Tis' just a test!", {'lineno': 2})
 bdp = cnnbp.BenchDescriptionJSONParser(True)
 bench_desc = bdp.parse("./sample_cnn_bench1.json")
 
-print(len(bench_desc['cnns']['TestCNN01']['layers']))
-print(len(bench_desc['selector'].dynamic_values))
 
-netbuilder = cnnb.LasagneCNNBuilder()
+print("parsed", len(bench_desc['cnns']), "CNNs")
+for cnn, cnnc in bench_desc['cnns'].items():
+    print("Layers:", len(cnnc['layers']))
+    print("Dynamic Values:", len(cnnc['selector'].dynamic_values))
+    netbuilder = cnnb.LasagneCNNBuilder(cnnc)
+    net = netbuilder.build(cnnc)
 
-net = netbuilder.build(bench_desc['cnns']['TestCNN01'])
+    tensors = {}
+    train_func_builder = cnntrf.LasagneTrainingFunctionBuilder(net, cnnc['training']['function'], tensors)
+    test_func_builder = cnntef.LasagneTestFunctionBuilder(net, cnnc['training']['function'], tensors)
 
-tensors = {}
-train_func_builder = cnntrf.LasagneTrainingFunctionBuilder(net, bench_desc['cnns']['TestCNN01']['training']['function'], tensors)
-test_func_builder = cnntef.LasagneTestFunctionBuilder(net, bench_desc['cnns']['TestCNN01']['training']['function'], tensors)
+    for stage in range(0, bench_desc['stages']):
+        print("Stage", stage+1, "of", bench_desc['stages'])
+        cnnc['selector'].select_dvals(stage)
+
+        epochs = cnnc['training']['params']['epochs'].value(stage)
+
+        net = netbuilder.build(stage=stage)
+        #train_func = train_func_builder.build(net=net, stage=stage)
+        #test_func = test_func_builder.build(net=net, stage=stage)
+
+        for run in range(0, bench_desc['runs']):
+            print("Run", run+1, "of", bench_desc['runs'])
+            for epoch in range(0, epochs):
+                print("Epoch", epoch+1, "of", epochs)
+                # loss = train_func(image, target)
+                # test_func...
 
 #dataset = Dataset(bench_desc['datasets'][0]['filename'])
 #batch_gen = ThreadedBatchGenerator(dataset)
@@ -384,7 +405,7 @@ test_func_builder = cnntef.LasagneTestFunctionBuilder(net, bench_desc['cnns']['T
 for image_batch, target_batch in batch_gen.batch():
     loss = train_func(image_batch, target_batch)
     # etc
-'''
+
 lpd = open("layerparams.csv", 'w')
 lpd.write("stage;")
 lnums = {
@@ -398,9 +419,9 @@ for layerp in bench_desc['cnns']['TestCNN01']['layers']:
     lnums[ltype] += 1
 lpd.write("\n")
 
-for stage in range(0, 4):
+for stage in range(0, 1):
     # make dvalue selection
-    bench_desc['selector'].select_dvals(stage)
+    bench_desc['cnns']['TestCNN01']['selector'].select_dvals(stage)
     # build net
     net = netbuilder.build(stage=stage)
     train_func = train_func_builder.build(stage=stage)
@@ -418,6 +439,8 @@ for stage in range(0, 4):
     for run in range(0, 5):
         # do training and testing here
         pass
+        
+'''
 
 '''
 bdfp = open("./sample_cnn_bench1.json", "r")
