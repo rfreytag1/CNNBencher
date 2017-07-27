@@ -11,8 +11,8 @@ class Dataset:
             'dir.samples': "samples",
             'dir.noise': "noise",
             'validation.frac': 0.1,
-            'imagedim.w': 512,
-            'imagedim.h': 512
+            'image.dimensions': [512, 512, 1],
+            'batch.size': 64
         }
 
         self.initialized = False

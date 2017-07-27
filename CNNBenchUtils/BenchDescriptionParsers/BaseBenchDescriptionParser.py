@@ -68,9 +68,7 @@ class BaseBenchDescriptionParser:
         self.bench_desc['datasets'][dataset_file] = tmp_dataset
 
         tmp_dataset.set_prop('classes.max', dataset.get('classes', 20))
-        tmp_dataset.set_prop('imagedim.w', dataset.get('image_dimensions.w', 128))
-        tmp_dataset.set_prop('imagedim.h', dataset.get('image_dimensions.h', 128))
-        tmp_dataset.set_prop('imagedim.d', dataset.get('image_dimensions.d', 1))
+        tmp_dataset.set_prop('image.dimensions', dataset.get('image.dimensions', [128, 128, 1]))
         tmp_dataset.set_prop('samplesize', dataset.get('class.samples', 10))
         tmp_dataset.set_prop('validation.frac', dataset.get('validation.frac', 0.1))
 

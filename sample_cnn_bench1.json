@@ -7,8 +7,7 @@
 			"filename": "test01.zip",
 			"class.samples": 5000,
 			"classes": 20,
-			"image_dimensions.w": 512,
-			"image_dimensions.h": 256
+			"image.dimensions": [512, 256, 1]
 		},
 		{
 			"filename": "test02.zip",

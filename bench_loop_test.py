@@ -4,6 +4,7 @@ import logging
 import os
 import queue
 import time
+import threading
 
 import cv2
 import numpy as np
@@ -24,143 +25,6 @@ TRAIN=[]
 
 # Loading images with CPU background threads during GPU forward passes saves a lot of time
 # Credit: J. Schlüter (https://github.com/Lasagne/Lasagne/issues/12)
-def threaded_batch_generator(generator, num_cached=10):
-    import queue
-    bqueue = queue.Queue(maxsize=num_cached)
-    sentinel = object()  # guaranteed unique reference
-
-    # define producer (putting items into queue)
-    def producer():
-        for item in generator:
-            bqueue.put(item)
-        bqueue.put(sentinel)
-
-    # start producer (in a background thread)
-    import threading
-    thread = threading.Thread(target=producer)
-    thread.daemon = True
-    thread.start()
-
-    # run as consumer (read items from queue, in current thread)
-    item = bqueue.get()
-    while item is not sentinel:
-        yield item
-        bqueue.task_done()
-        item = bqueue.get()
-
-class ThreadedBatchGenerator:
-    queue_end = object()
-
-    def __init__(self, dataset=None, batch_size=128):
-        self.dataset = dataset
-        self.file_queue = queue.Queue()
-        self.batch_size = batch_size
-        self.classes_maxnum = 20
-        self.classes_count = 20
-        self.classes = []
-        self.image_dim = [512, 256, 3]
-        self.cache_size = 20
-
-    def getDatasetChunk(self, split):
-        # get batch-sized chunks of image paths
-        for i in range(0, len(split), self.batch_size):
-            yield split[i:i + self.batch_size]
-
-    def openImage(self, path):
-        return np.ndarray([2,3], np.float32)
-
-    def loadImageAndTarget(self, path):
-
-        # here we open the image
-        img = self.openImage(path)
-
-        # image augmentation?
-
-        # we want to use subfolders as class labels
-        label = path.split("/")[-1]
-
-        # we need to get the index of our label from CLASSES
-        index = self.classes.index(label)
-
-        # allocate array for target
-        target = np.zeros(self.classes_maxnum, dtype='float32')
-
-        # we set our target array = 1.0 at our label index, all other entries remain 0.0
-        target[index] = 1.0
-
-        # transpose image if dim=3
-        try:
-            img = np.transpose(img, (2, 0, 1))
-        except:
-            pass
-
-        # we need a 4D-vector for our image and a 2D-vector for our targets
-        img = img.reshape(-1, self.image_dim[2], self.image_dim[1], self.image_dim[0])
-        target = target.reshape(-1, self.classes_maxnum)
-
-        return img, target
-
-    def getNextImageBatch(self, split):
-
-        # fill batch
-        for chunk in self.getDatasetChunk(split):
-
-            # allocate numpy arrays for image data and targets
-            image_batch_buffer = np.zeros((self.batch_size, self.image_dim[2], self.image_dim[1], self.image_dim[0]), dtype='float32')
-            target_batch_buffer = np.zeros((self.batch_size, self.classes_maxnum), dtype='float32')
-
-            loaded = 0
-            for path in chunk:
-
-                try:
-                    # load image data and class label from path
-                    x, y = self.loadImageAndTarget(path)
-
-                    # pack into batch array
-                    image_batch_buffer[loaded] = x
-                    target_batch_buffer[loaded] = y
-                    loaded += 1
-                except:
-                    continue
-
-            # trim to actual size
-            image_batch_buffer = image_batch_buffer[:loaded]
-            target_batch_buffer = target_batch_buffer[:loaded]
-
-            # instead of return, we use yield
-            yield image_batch_buffer, target_batch_buffer
-
-    def create_batch(self):
-        pass
-        '''
-        for batched_paths in
-        image_batch = np.zeros((self.batch_size, self.image_dim[2], self.image_dim[1], self.image_dim[0]), dtype='float32')
-        targets_batch = np.zeros((self.batch_size, self.classes_count))
-        '''
-
-    def batch(self):
-        import queue
-        bqueue = queue.Queue(maxsize=self.cache_size)
-        sentinel = object()  # guaranteed unique reference
-
-        # define producer (putting items into queue)
-        def producer():
-            for item in self.getNextImageBatch():
-                bqueue.put(item)
-            bqueue.put(sentinel)
-
-        # start producer (in a background thread)
-        import threading
-        thread = threading.Thread(target=producer)
-        thread.daemon = True
-        thread.start()
-
-        # run as consumer (read items from queue, in current thread)
-        item = bqueue.get()
-        while item is not sentinel:
-            yield item
-            bqueue.task_done()
-            item = bqueue.get()
 
 
 class ImageTargetLoader:
@@ -168,9 +32,8 @@ class ImageTargetLoader:
         self.properties = {}
         self.dataset = dataset
         self.fileloader = None
-        if fileloader is not None and issubclass(type(fileloader), cnndfh.BaseFileLoader):
+        if fileloader is not None and issubclass(type(fileloader), cnndfh.BaseDatasetFileLoader):
             self.fileloader = fileloader
-        self.properties['image.dimensions'] = [128, 64, 1]
 
     def open(self, filename):
         img = self.fileloader.open(filename)
@@ -187,38 +50,85 @@ class ImageTargetLoader:
         if img is None:
             return None
 
-        if self.properties['image.dimensions'][2] < 3:
-            # TODO: add channel remix down to two channels
-            try:
-                img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-            except Exception as e:
-                print("Eh", e)
-
-                return None, None
-        else:
-            pass
-
-            # resize to conv input size
-        img = cv2.resize(img, (self.properties['image.dimensions'][0], self.properties['image.dimensions'][1]))
-
         # convert to floats between 0 and 1
         img = np.asarray(img / 255., dtype='float32')
 
-        img = img.reshape(-1, self.properties['image.dimensions'][2], self.properties['image.dimensions'][1], self.properties['image.dimensions'][0])
+        img = img.reshape(-1, self.dataset.properties['image.dimensions'][2], self.dataset.properties['image.dimensions'][1], self.dataset.properties['image.dimensions'][0])
         target = target.reshape(-1, len(self.dataset.classes))
 
         return img, target
 
+
+class BatchImageTargetLoader:
+    def __init__(self, dataset=None):
+        self.dataset = dataset
+        self.batch_size = self.dataset.get_prop('batch.size')
+        self.image_target_loader = ImageTargetLoader(dataset, None)
+
+    def __get_chunk(self):
+        for path_batch in range(0, len(self.dataset.sample_files), self.batch_size):
+            yield self.dataset.sample_files[path_batch:path_batch + self.batch_size]
+
+    def next_batch(self):
+        for fp_chunk in self.__get_chunk():
+            image_batch_buffer = np.zeros((self.dataset.properties['batch.size'],
+                                           self.dataset.properties['image.dimensions'][2],
+                                           self.dataset.properties['image.dimensions'][1],
+                                           self.dataset.properties['image.dimensions'][0]), dtype='float32')
+
+            target_batch_buffer = np.zeros((self.dataset.properties['batch.size'],
+                                            len(self.dataset.classes)), dtype='float32')
+
+            batch_num = 0
+            for file in fp_chunk:
+                image_buffer, target_buffer = self.image_target_loader.open(file)
+                image_batch_buffer[batch_num] = image_buffer
+                target_batch_buffer[batch_num] = target_buffer
+
+            image_batch_buffer = image_batch_buffer[:batch_num]
+            target_batch_buffer = image_batch_buffer[:batch_num]
+
+            yield image_batch_buffer, target_batch_buffer
+
+
+class ThreadedBatchGenerator:
+    def __init__(self):
+        self.batch_loader = BatchImageTargetLoader()
+        self.batch_queue = queue.Queue()
+        self.batch_end = object()
+
+        self.producer_thread = threading.Thread(target=self.__batch_producer(), daemon=True)
+
+    def __batch_producer(self):
+        for item in self.batch_loader.next_batch():
+            self.batch_queue.put(item)
+        self.batch_queue.put(self.batch_end)
+
+    def batch(self):
+        self.producer_thread.start()
+        # run as consumer (read items from queue, in current thread)
+        item = self.batch_queue.get()
+        while item is not self.batch_end:
+            yield item
+            self.batch_queue.task_done()
+            item = self.batch_queue.get()
         
 dsh = cnndth.DatasetDirectoryHandler('./dataset/')
 dsd = Dataset(dsh)
-cifl = cnndfh.CachedImageFileLoader(dsh)
+cifl = cnndfh.CachedImageDatasetFileLoader(dsd)
 itl = ImageTargetLoader(dsd, cifl)
+
+bitl = BatchImageTargetLoader(dsd)
+ibatch, tbatch = bitl.next_batch()
+while db is not None:
+    db = bitl.next_batch()
+
+'''
 for sample_file in dsd.sample_files:
     print(sample_file)
     img, target = itl.open(sample_file)
     print(target)
-
+'''
 exit()
 
 stages = 10
