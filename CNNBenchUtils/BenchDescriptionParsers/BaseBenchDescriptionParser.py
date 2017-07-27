@@ -1,4 +1,9 @@
 import numbers
+import zipfile
+import os
+
+from CNNBenchUtils.Datasets.Dataset import Dataset
+from CNNBenchUtils.Datasets.DatasetHandlers import *
 
 from CNNBenchUtils.DynamicValues.ValueTypes import *
 from CNNBenchUtils.ValueSelectors.ValueSelectors import *
@@ -10,6 +15,7 @@ class BenchDescription(dict):
         self['name'] = ''
         self['stages'] = 0
         self['runs'] = 0
+        self['datasets'] = {}
         self['cnns'] = {}
 
 
@@ -55,6 +61,31 @@ class BaseBenchDescriptionParser:
         if not callable(parser_func):
             raise TypeError('Parameter "parser_func" must be callable!')
         self.selector_parsers[stype] = parser_func
+
+    def parse_dataset(self, dataset):
+        dataset_file = dataset['filename']
+        tmp_dataset = Dataset()
+        self.bench_desc['datasets'][dataset_file] = tmp_dataset
+
+        tmp_dataset.set_prop('classes.max', dataset.get('classes', 20))
+        tmp_dataset.set_prop('imagedim.w', dataset.get('image_dimensions.w', 128))
+        tmp_dataset.set_prop('imagedim.h', dataset.get('image_dimensions.h', 128))
+        tmp_dataset.set_prop('imagedim.d', dataset.get('image_dimensions.d', 1))
+        tmp_dataset.set_prop('samplesize', dataset.get('class.samples', 10))
+        tmp_dataset.set_prop('validation.frac', dataset.get('validation.frac', 0.1))
+
+        dataset_handler = None
+        if dataset_file.endswith('.zip') and zipfile.is_zipfile(dataset_file):
+            pass
+        elif os.path.isdir(dataset_file):
+            dataset_handler = DatasetDirectoryHandler(dataset_file)
+
+        tmp_dataset.dataset_handler(dataset_handler)
+        tmp_dataset.init_classes()
+        tmp_dataset.init_files()
+
+        return tmp_dataset
+
 
     def parse_param(self, param, cnn_name):
         param_type = str(param['type']).lower()
