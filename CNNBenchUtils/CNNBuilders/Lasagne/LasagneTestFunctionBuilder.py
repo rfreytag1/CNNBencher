@@ -11,8 +11,8 @@ class LasagneTestFunctionBuilder(BaseLasagneFunctionBuilder):
     def __init__(self, net=None, func_desc=None, tensors=None):
         super(LasagneTestFunctionBuilder, self).__init__(net, func_desc, tensors)
 
-    def build(self, net=None, func_desc=None, tensors=None, stage=0):
-        super(LasagneTestFunctionBuilder, self).build(net, func_desc, tensors, stage)
+    def build(self, net=None, tensors=None, func_desc=None, stage=0):
+        super(LasagneTestFunctionBuilder, self).build(net, tensors, func_desc, stage)
 
         # get current values for parameters
         l2_reg_w = LasagneTestFunctionBuilder.getdval_float(self.func_desc['params'].get('regularization.l2_weight', 1e-4), stage)

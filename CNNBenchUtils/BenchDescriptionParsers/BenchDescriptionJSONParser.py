@@ -1,5 +1,6 @@
 import json
 
+from CNNBenchUtils.DynamicValues.ValueTypes import ValueStatic
 from CNNBenchUtils.BenchDescriptionParsers.BaseBenchDescriptionParser import BaseBenchDescriptionParser
 
 
@@ -33,13 +34,25 @@ class BenchDescriptionJSONParser(BaseBenchDescriptionParser):
                 pkey = tparam['key']
                 dval = self.parse_param(tparam, cnn_name)
                 if dval is not None:
-                    self.bench_desc['cnns'][cnn_name]['training']['params'][pkey] = dval
+                    self.bench_desc['cnns'][cnn_name]['training']['params'][pkey.lower()] = dval
+
+            if self.bench_desc['cnns'][cnn_name]['training']['params'].get('epochs') is None:
+                self.bench_desc['cnns'][cnn_name]['training']['params']['epochs'] = ValueStatic(1, self.stages, self.gapless_dvalues)
 
             for fparam in cnn['training']['function']['params']:
                 pkey = fparam['key']
                 dval = self.parse_param(fparam, cnn_name)
                 if dval is not None:
                     self.bench_desc['cnns'][cnn_name]['training']['function']['params'][pkey] = dval
+
+            if self.bench_desc['cnns'][cnn_name]['training']['function']['params'].get('learning_rate.interp') is None:
+                self.bench_desc['cnns'][cnn_name]['training']['function']['params']['learning_rate.interp'] = ValueStatic('linear', self.stages, self.gapless_dvalues)
+
+            if self.bench_desc['cnns'][cnn_name]['training']['function']['params'].get('learning_rate.start') is None:
+                self.bench_desc['cnns'][cnn_name]['training']['function']['params']['learning_rate.start'] = ValueStatic(0.01, self.stages, self.gapless_dvalues)
+
+            if self.bench_desc['cnns'][cnn_name]['training']['function']['params'].get('learning_rate.end') is None:
+                self.bench_desc['cnns'][cnn_name]['training']['function']['params']['learning_rate.end'] = ValueStatic(0.0001, self.stages, self.gapless_dvalues)
 
             self.bench_desc['cnns'][cnn_name]['layers'] = []
             # layer_number = 0

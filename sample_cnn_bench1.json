@@ -6,7 +6,7 @@
 		{
 			"filename": "test01.zip",
 			"sample_size": 5000,
-			"classes": 1500,
+			"classes": 20,
 			"image_dimensions.w": 512,
 			"image_dimensions.h": 256
 		},

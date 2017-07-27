@@ -13,6 +13,8 @@ import numpy as np
 
 from lasagne import layers as l
 
+import CNNBenchUtils.DynamicValues.ValueTypes as dvt
+
 import CNNBenchUtils.BenchDescriptionParsers.BenchDescriptionJSONParser as cnnbp
 
 import CNNBenchUtils.CNNBuilders.Lasagne.LasagneCNNBuilder as cnnb
@@ -282,7 +284,7 @@ def threaded_batch_generator(generator, num_cached=10):
     while item is not sentinel:
         yield item
         bqueue.task_done()
-        item = queue.get()
+        item = bqueue.get()
 
 
 class FileLoader:
@@ -332,12 +334,115 @@ class CachedImageLoader(CachedFileLoader):
 class ThreadedBatchGenerator:
     queue_end = object()
 
-    def __init__(self, dataset=None):
+    def __init__(self, dataset=None, batch_size=128):
         self.dataset = dataset
         self.file_queue = queue.Queue()
+        self.batch_size = batch_size
+        self.classes_maxnum = 20
+        self.classes_count = 20
+        self.classes = []
+        self.image_dim = [512, 256, 3]
+        self.cache_size = 20
+
+    def getDatasetChunk(self, split):
+        # get batch-sized chunks of image paths
+        for i in range(0, len(split), self.batch_size):
+            yield split[i:i + self.batch_size]
+
+    def openImage(self, path):
+        return np.ndarray([2,3], np.float32)
+
+    def loadImageAndTarget(self, path):
+
+        # here we open the image
+        img = self.openImage(path)
+
+        # image augmentation?
+
+        # we want to use subfolders as class labels
+        label = path.split("/")[-1]
+
+        # we need to get the index of our label from CLASSES
+        index = self.classes.index(label)
+
+        # allocate array for target
+        target = np.zeros(self.classes_maxnum, dtype='float32')
+
+        # we set our target array = 1.0 at our label index, all other entries remain 0.0
+        target[index] = 1.0
+
+        # transpose image if dim=3
+        try:
+            img = np.transpose(img, (2, 0, 1))
+        except:
+            pass
+
+        # we need a 4D-vector for our image and a 2D-vector for our targets
+        img = img.reshape(-1, self.image_dim[2], self.image_dim[1], self.image_dim[0])
+        target = target.reshape(-1, self.classes_maxnum)
+
+        return img, target
+
+    def getNextImageBatch(self, ):
+
+        # fill batch
+        for chunk in self.getDatasetChunk(split):
+
+            # allocate numpy arrays for image data and targets
+            image_batch_buffer = np.zeros((self.batch_size, self.image_dim[2], self.image_dim[1], self.image_dim[0]), dtype='float32')
+            target_batch_buffer = np.zeros((self.batch_size, self.classes_maxnum), dtype='float32')
+
+            loaded = 0
+            for path in chunk:
+
+                try:
+                    # load image data and class label from path
+                    x, y = self.loadImageAndTarget(path)
+
+                    # pack into batch array
+                    image_batch_buffer[loaded] = x
+                    target_batch_buffer[loaded] = y
+                    loaded += 1
+                except:
+                    continue
+
+            # trim to actual size
+            image_batch_buffer = image_batch_buffer[:loaded]
+            target_batch_buffer = target_batch_buffer[:loaded]
+
+            # instead of return, we use yield
+            yield image_batch_buffer, target_batch_buffer
+
+    def create_batch(self):
+        for batched_paths in
+        image_batch = np.zeros((self.batch_size, self.image_dim[2], self.image_dim[1], self.image_dim[0]), dtype='float32')
+        targets_batch = np.zeros((self.batch_size, self.classes_count))
+
+
 
     def batch(self):
-        pass
+        import queue
+        bqueue = queue.Queue(maxsize=self.cache_size)
+        sentinel = object()  # guaranteed unique reference
+
+        # define producer (putting items into queue)
+        def producer():
+            for item in self.getNextImageBatch():
+                bqueue.put(item)
+            bqueue.put(sentinel)
+
+        # start producer (in a background thread)
+        import threading
+        thread = threading.Thread(target=producer)
+        thread.daemon = True
+        thread.start()
+
+        # run as consumer (read items from queue, in current thread)
+        item = bqueue.get()
+        while item is not sentinel:
+            yield item
+            bqueue.task_done()
+            item = bqueue.get()
 
 
 class Dataset:
@@ -376,11 +481,11 @@ for cnn, cnnc in bench_desc['cnns'].items():
     print("Layers:", len(cnnc['layers']))
     print("Dynamic Values:", len(cnnc['selector'].dynamic_values))
     netbuilder = cnnb.LasagneCNNBuilder(cnnc)
-    net = netbuilder.build(cnnc)
+    # net = netbuilder.build(cnnc)
 
     tensors = {}
-    train_func_builder = cnntrf.LasagneTrainingFunctionBuilder(net, cnnc['training']['function'], tensors)
-    test_func_builder = cnntef.LasagneTestFunctionBuilder(net, cnnc['training']['function'], tensors)
+    train_func_builder = cnntrf.LasagneTrainingFunctionBuilder(None, cnnc['training']['function'])
+    test_func_builder = cnntef.LasagneTestFunctionBuilder(None, cnnc['training']['function'])
 
     for stage in range(0, bench_desc['stages']):
         print("Stage", stage+1, "of", bench_desc['stages'])
@@ -389,15 +494,29 @@ for cnn, cnnc in bench_desc['cnns'].items():
         epochs = cnnc['training']['params']['epochs'].value(stage)
 
         net = netbuilder.build(stage=stage)
-        #train_func = train_func_builder.build(net=net, stage=stage)
-        #test_func = test_func_builder.build(net=net, stage=stage)
+        tensors.clear() # very important or else the functions will build with the wrong tensors(e.g. from previous builds)
+        train_func = train_func_builder.build(net, tensors, stage=stage)
+        test_func = test_func_builder.build(net, tensors, stage=stage)
 
         for run in range(0, bench_desc['runs']):
             print("Run", run+1, "of", bench_desc['runs'])
+            lr_interp = cnnc['training']['function']['params']['learning_rate.interp'].value(stage)
+            learning_rate = None
+            if lr_interp != 'none':
+                lr_start = float(cnnc['training']['function']['params']['learning_rate.start'].value(stage))
+                lr_end = float(cnnc['training']['function']['params']['learning_rate.end'].value(stage))
+                learning_rate = dvt.ValueLinear(lr_start, lr_end, epochs, True)
+            else:
+                lr_start = float(cnnc['training']['function']['params']['learning_rate.start'].value(stage))
+                learning_rate = dvt.ValueStatic(lr_start, epochs, True)
+
+            learning_rate.unlock()
+
             for epoch in range(0, epochs):
                 print("Epoch", epoch+1, "of", epochs)
-                # loss = train_func(image, target)
+                # loss = train_func(image_batch, target_batch)
                 # test_func...
+
 
 #dataset = Dataset(bench_desc['datasets'][0]['filename'])
 #batch_gen = ThreadedBatchGenerator(dataset)

@@ -10,7 +10,7 @@ class BaseFunctionBuilder(BaseBuilder):
         if self.tensors is None:
             self.tensors = {}
 
-    def build(self, net=None, func_desc=None, tensors=None, stage=0):
+    def build(self, net=None, tensors=None, func_desc=None, stage=0):
         '''
         Builds a neural net function based on the NN given as "net" for the current benchmark stage
         :param net: neural net to build function for

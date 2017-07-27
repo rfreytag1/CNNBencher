@@ -32,7 +32,7 @@ class LasagneTrainingFunctionBuilder(BaseLasagneFunctionBuilder):
 
         LasagneTrainingFunctionBuilder.update_factories[ufname] = fact_func
 
-    def build(self, net=None, func_desc=None, tensors=None, stage=0):
+    def build(self, net=None, tensors=None, func_desc=None, stage=0):
         '''
         builds the training function based on the function description given in the benchmark file
         :param net: neural net to build the function for. Must be a lasagne.layers.Layer derived type
@@ -41,7 +41,7 @@ class LasagneTrainingFunctionBuilder(BaseLasagneFunctionBuilder):
         :param stage: benchmark stage for which to build
         :return: training function as a callable and the tensors dict
         '''
-        super(LasagneTrainingFunctionBuilder, self).build(net, func_desc, tensors, stage)
+        super(LasagneTrainingFunctionBuilder, self).build(net, tensors, func_desc, stage)
 
         # get parameters to determine how to build the training function
         update_type = LasagneTrainingFunctionBuilder.getdval_str(self.func_desc['params'].get('update.type'), stage, 'adam').lower()

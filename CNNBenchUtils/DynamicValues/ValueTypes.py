@@ -4,7 +4,7 @@ from CNNBenchUtils.DynamicValues.BaseValue import BaseValue
 
 
 class ValueStatic(BaseValue):
-    def __init__(self, value=0, stages=0, gapless=False):
+    def __init__(self, value=None, stages=0, gapless=False):
         super(ValueStatic, self).__init__(value, stages, gapless)
 
     @staticmethod

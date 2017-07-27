@@ -59,7 +59,7 @@ class BaseLasagneFunctionBuilder(BaseFunctionBuilder):
         a = t.mean(objectives.binary_accuracy(prediction, targets))
         return a
 
-    def build(self, net=None, func_desc=None, tensors=None, stage=0):
+    def build(self, net=None, tensors=None, func_desc=None, stage=0):
         '''
         Just some basic input parameter validation to be used by sub-classes.
         Also see BaseFunctionBuilder
