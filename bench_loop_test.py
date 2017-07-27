@@ -437,9 +437,10 @@ class DatasetDirectoryHandler(BaseDatasetHandler):
 
     def list(self, subpath=None):
         if subpath is None:
-            dir_list = os.listdir(self.datasetpath)
-        else:
-            dir_list = os.listdir(os.path.join(self.datasetpath, subpath))
+            subpath = '.'
+
+        dir_list = os.listdir(os.path.join(self.datasetpath, subpath))
+        dir_list = [os.path.join(subpath, dirent) for dirent in dir_list]
 
         return dir_list
 
@@ -525,16 +526,14 @@ class ImageDataset(BaseDataset):
         self.fileloader = CachedDatasetImageFileLoader(dataseth)
         if fileloader is not None and issubclass(type(fileloader), BaseDatasetHandler):
             self.fileloader = fileloader
-        self.properties['image.dimensions'] = [64, 64, 1]
-        self.__init_classes()
+        self.properties['image.dimensions'] = [128, 64, 1]
+        self.init_classes()
 
-    def __init_classes(self):
+    def init_classes(self):
         dataset_root = self.list()
-        print("init classes")
         for ent in dataset_root:
-            print(ent)
             if os.path.isdir(os.path.join(self.dataset_handler.datasetpath, ent)) and len(self.classes) < self.get_prop('classes.max'):
-                self.classes.append(ent)
+                self.classes.append(os.path.split(ent)[-1])
 
     def open(self, filename):
         img = self.fileloader.open(filename)
@@ -550,9 +549,10 @@ class ImageDataset(BaseDataset):
         if self.properties['image.dimensions'][2] < 3:
             # TODO: add channel remix down to two channels
             try:
-                img = cv2.cvtColor(img, cv2.cv2.COLOR_BGR2GRAY)
-            except:
-                print()
+                img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            except Exception as e:
+                print("Eh", e)
+
                 return None, None
         else:
             pass
@@ -564,7 +564,7 @@ class ImageDataset(BaseDataset):
         img = np.asarray(img / 255., dtype='float32')
 
         img = img.reshape(-1, self.properties['image.dimensions'][2], self.properties['image.dimensions'][1], self.properties['image.dimensions'][0])
-        target = target.reshape(-1, self.properties['classes.max'])
+        target = target.reshape(-1, len(self.classes))
 
         return img, target
 
@@ -573,15 +573,11 @@ dsh = DatasetDirectoryHandler('./dataset/')
 dsd = ImageDataset(dsh)
 for classf in dsd.classes:
     fl = dsd.list(classf)
-    print(fl)
     for file in fl:
-        img, target = dsd.open(os.path.join(classf, file))
+        img, target = dsd.open(file)
         print(target)
 
 exit()
-print(dsd.list('CNNBenchUtils'))
-
-sys.exit()
 
 stages = 10
 runs = 5
