@@ -50,7 +50,7 @@ class CachedImageDatasetFileLoader(BaseDatasetFileLoader):
             try:
                 file = cv2.cvtColor(file, cv2.COLOR_BGR2GRAY)
             except Exception as e:
-                print("Image resize for \"", filename, "\"!(", e, ")")
+                print("Image color conversion for \"", filename, "\" failed!(", e, ")")
                 return None
         else:
             pass

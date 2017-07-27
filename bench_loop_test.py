@@ -37,6 +37,9 @@ class ImageTargetLoader:
 
     def open(self, filename):
         img = self.fileloader.open(filename)
+        if img is None:
+            return None, None
+
         target = os.path.split(os.path.split(filename)[0])[-1] # get directory name which is at the same time also the class name
         try:
             idx = self.dataset.classes.index(target)
@@ -46,9 +49,6 @@ class ImageTargetLoader:
 
         target = np.zeros(len(self.dataset.classes), dtype='float32')
         target[idx] = 1.0
-
-        if img is None:
-            return None
 
         # convert to floats between 0 and 1
         img = np.asarray(img / 255., dtype='float32')
@@ -60,10 +60,10 @@ class ImageTargetLoader:
 
 
 class BatchImageTargetLoader:
-    def __init__(self, dataset=None):
+    def __init__(self, dataset=None, file_loader=None):
         self.dataset = dataset
         self.batch_size = self.dataset.get_prop('batch.size')
-        self.image_target_loader = ImageTargetLoader(dataset, None)
+        self.image_target_loader = ImageTargetLoader(dataset, file_loader)
 
     def __get_chunk(self):
         for path_batch in range(0, len(self.dataset.sample_files), self.batch_size):
@@ -82,19 +82,22 @@ class BatchImageTargetLoader:
             batch_num = 0
             for file in fp_chunk:
                 image_buffer, target_buffer = self.image_target_loader.open(file)
+                if image_buffer is None:
+                    continue
                 image_batch_buffer[batch_num] = image_buffer
                 target_batch_buffer[batch_num] = target_buffer
+                batch_num += 1
 
             image_batch_buffer = image_batch_buffer[:batch_num]
-            target_batch_buffer = image_batch_buffer[:batch_num]
+            target_batch_buffer = target_batch_buffer[:batch_num]
 
             yield image_batch_buffer, target_batch_buffer
 
 
 class ThreadedBatchGenerator:
-    def __init__(self):
-        self.batch_loader = BatchImageTargetLoader()
-        self.batch_queue = queue.Queue()
+    def __init__(self, batch_loader):
+        self.batch_loader = batch_loader
+        self.batch_queue = queue.Queue(maxsize=batch_loader.dataset.get_prop('batch.size'))
         self.batch_end = object()
 
         self.producer_thread = threading.Thread(target=self.__batch_producer(), daemon=True)
@@ -113,23 +116,12 @@ class ThreadedBatchGenerator:
             self.batch_queue.task_done()
             item = self.batch_queue.get()
         
-dsh = cnndth.DatasetDirectoryHandler('./dataset/')
-dsd = Dataset(dsh)
-cifl = cnndfh.CachedImageDatasetFileLoader(dsd)
-itl = ImageTargetLoader(dsd, cifl)
-
-bitl = BatchImageTargetLoader(dsd)
-ibatch, tbatch = bitl.next_batch()
-while db is not None:
-    db = bitl.next_batch()
-
 '''
 for sample_file in dsd.sample_files:
     print(sample_file)
     img, target = itl.open(sample_file)
     print(target)
 '''
-exit()
 
 stages = 10
 runs = 5
@@ -149,6 +141,13 @@ default_log.warning("Tis' just a test!", {'lineno': 2})
 bdp = cnnbp.BenchDescriptionJSONParser(True)
 bench_desc = bdp.parse("./sample_cnn_bench1.json")
 
+dsh = cnndth.DatasetDirectoryHandler('./dataset/')
+dsd = Dataset(dsh)
+cifl = cnndfh.CachedImageDatasetFileLoader(dsd)
+itl = ImageTargetLoader(dsd, cifl)
+
+bitl = BatchImageTargetLoader(dsd, cifl)
+tbg = ThreadedBatchGenerator(bitl)
 
 print("parsed", len(bench_desc['cnns']), "CNNs")
 for cnn, cnnc in bench_desc['cnns'].items():
@@ -169,8 +168,8 @@ for cnn, cnnc in bench_desc['cnns'].items():
 
         net = netbuilder.build(stage=stage)
         tensors.clear() # very important or else the functions will build with the wrong tensors(e.g. from previous builds)
-        train_func = train_func_builder.build(net, tensors, stage=stage)
-        test_func = test_func_builder.build(net, tensors, stage=stage)
+        train_func, tensors = train_func_builder.build(net, tensors, stage=stage)
+        test_func, tensors = test_func_builder.build(net, tensors, stage=stage)
 
         for run in range(0, bench_desc['runs']):
             print("Run", run+1, "of", bench_desc['runs'])
@@ -188,7 +187,8 @@ for cnn, cnnc in bench_desc['cnns'].items():
 
             for epoch in range(0, epochs):
                 print("Epoch", epoch+1, "of", epochs)
-                # loss = train_func(image_batch, target_batch)
+                for image_batch, target_batch in tbg.batch():
+                    loss = train_func(image_batch, target_batch, learning_rate.value(stage))
                 # test_func...
 
 

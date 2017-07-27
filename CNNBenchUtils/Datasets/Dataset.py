@@ -5,6 +5,7 @@ import random
 class Dataset:
     def __init__(self, dataseth=None):
         self.dataset_handler = dataseth
+
         self.properties = {
             'classes.max': 20,
             'samplesize': 30,
