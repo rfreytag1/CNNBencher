@@ -6,6 +6,9 @@ import logging
 import json
 import queue
 import threading
+import os
+import sys
+
 
 import cv2
 import numpy as np
@@ -414,11 +417,12 @@ class ThreadedBatchGenerator:
             yield image_batch_buffer, target_batch_buffer
 
     def create_batch(self):
+        pass
+        '''
         for batched_paths in
         image_batch = np.zeros((self.batch_size, self.image_dim[2], self.image_dim[1], self.image_dim[0]), dtype='float32')
         targets_batch = np.zeros((self.batch_size, self.classes_count))
-
-
+        '''
 
     def batch(self):
         import queue
@@ -445,17 +449,56 @@ class ThreadedBatchGenerator:
             item = bqueue.get()
 
 
-class Dataset:
-    def __init__(self, filename=None):
+class BaseDataset:
+    def __init__(self, datasetpath=None):
         self.loaded = False
-        self.filename = filename
+        self.datasetpath = datasetpath
 
-    def batch(self):
+    def is_loaded(self):
+        return self.loaded
+
+    def list(self, subpath=None):
         pass
+
+    def load(self, datasetpath):
+        self.datasetpath = datasetpath
+        return True
+
+    def open(self, filename):
+        pass
+
+    def close(self):
+        pass
+
+
+class DatasetDirectory(BaseDataset):
+    def __init__(self, datasetpath=None):
+        super(DatasetDirectory, self).__init__(datasetpath)
+        self.loaded = True
+
+    def list(self, subpath=None):
+        dir_list = None
+        if subpath is None:
+            dir_list = os.listdir(self.datasetpath)
+        else:
+            dir_list = os.listdir(os.path.join(self.datasetpath, subpath))
+
+        return dir_list
+
+    def open(self, filename):
+        fobj = open(os.path.join(self.datasetpath, filename))
+        return fobj
+
+
 
 imgloader = CachedImageLoader()
 imgloader.load('test.jpg')
 
+dsd = DatasetDirectory('./')
+
+print(dsd.list('CNNBenchUtils'))
+
+sys.exit()
 
 stages = 10
 runs = 5
