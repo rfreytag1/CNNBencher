@@ -290,48 +290,7 @@ def threaded_batch_generator(generator, num_cached=10):
         item = bqueue.get()
 
 
-class FileLoader:
-    def __init__(self):
-        pass
 
-
-class CachedFileLoader(FileLoader):
-    file_cache = {}
-    
-    def __init__(self):
-        super(CachedFileLoader, self).__init__()
-    
-
-class CachedImageLoader(CachedFileLoader):
-    def __init__(self):
-        super(CachedImageLoader, self).__init__()
-
-    def load(self, filename):
-        IM_SIZE = [512, 256]
-        # using a dict {path:image} cache saves some time after first epoch
-        # but may consume a lot of RAM
-        if filename in CachedImageLoader.file_cache:
-            return CachedImageLoader.file_cache[filename]
-
-        # open image
-        try:
-            img = cv2.imread(filename)
-        except:
-            print("File \"", filename, "\" is not an image!")
-
-        if img is None:
-            return None
-
-        #img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-        # resize to conv input size
-        img = cv2.resize(img, (512, 256))
-
-        # convert to floats between 0 and 1
-        img = np.asarray(img / 255., dtype='float32')
-
-        CachedImageLoader.file_cache[filename] = img
-        return img
         
 
 class ThreadedBatchGenerator:
@@ -449,7 +408,7 @@ class ThreadedBatchGenerator:
             item = bqueue.get()
 
 
-class BaseDataset:
+class BaseDatasetHandler:
     def __init__(self, datasetpath=None):
         self.loaded = False
         self.datasetpath = datasetpath
@@ -471,13 +430,12 @@ class BaseDataset:
         pass
 
 
-class DatasetDirectory(BaseDataset):
+class DatasetDirectoryHandler(BaseDatasetHandler):
     def __init__(self, datasetpath=None):
-        super(DatasetDirectory, self).__init__(datasetpath)
+        super(DatasetDirectoryHandler, self).__init__(datasetpath)
         self.loaded = True
 
     def list(self, subpath=None):
-        dir_list = None
         if subpath is None:
             dir_list = os.listdir(self.datasetpath)
         else:
@@ -486,16 +444,141 @@ class DatasetDirectory(BaseDataset):
         return dir_list
 
     def open(self, filename):
-        fobj = open(os.path.join(self.datasetpath, filename))
+        fobj = open(os.path.join(self.datasetpath, filename), 'rb')
         return fobj
 
 
+class BaseDatasetFileLoader:
+    def __init__(self, dataseth):
+        if not issubclass(type(dataseth), BaseDatasetHandler):
+            raise TypeError("Invalid Dataset Type!")
 
-imgloader = CachedImageLoader()
-imgloader.load('test.jpg')
+        self.dataseth = dataseth
 
-dsd = DatasetDirectory('./')
+    def open(self, filename):
+        if not self.dataseth.is_loaded():
+            raise FileNotFoundError("Dataset is not loaded!")
+        return None
 
+
+class CachedDatasetImageFileLoader(BaseDatasetFileLoader):
+    file_cache = {}
+
+    def __init__(self, dataseth=None):
+        super(CachedDatasetImageFileLoader, self).__init__(dataseth)
+
+    def open(self, filename):
+        super(CachedDatasetImageFileLoader, self).open(filename)
+
+        filepath = os.path.join(self.dataseth.datasetpath, filename)
+
+        if filepath in CachedDatasetImageFileLoader.file_cache:
+            return CachedDatasetImageFileLoader.file_cache.get(filepath)
+
+        # file = self.dataset.open(filename)
+        src = self.dataseth.open(filename)
+        if src is None:
+            return None
+
+        srcb = np.frombuffer(src.read(), dtype='byte')
+
+        file = cv2.imdecode(srcb, cv2.IMREAD_ANYCOLOR)
+
+        if file is None:
+            return None
+
+        CachedDatasetImageFileLoader.file_cache[filepath] = file
+
+        return file
+    
+    
+class BaseDataset:
+    def __init__(self, dataseth=None, fileloader=None):
+        self.dataset_handler = dataseth
+        self.fileloader = fileloader
+        self.properties = {
+            "classes.max": 20
+        }
+
+        self.classes = []
+
+    def set_prop(self, key, value=None):
+        self.properties[key] = value
+
+    def get_prop(self, key):
+        return self.properties.get(key)
+
+    def list(self, subdir=None):
+        if self.dataset_handler is None:
+            raise ValueError("No Dataset Handler!")
+        if self.dataset_handler is None:
+            raise ValueError("No Dataset Handler!")
+        return self.dataset_handler.list(subdir)
+
+    def open(self, filename):
+        pass
+
+
+class ImageDataset(BaseDataset):
+    def __init__(self, dataseth, fileloader=None):
+        super(ImageDataset, self).__init__(dataseth, fileloader)
+        self.fileloader = CachedDatasetImageFileLoader(dataseth)
+        if fileloader is not None and issubclass(type(fileloader), BaseDatasetHandler):
+            self.fileloader = fileloader
+        self.properties['image.dimensions'] = [64, 64, 1]
+        self.__init_classes()
+
+    def __init_classes(self):
+        dataset_root = self.list()
+        print("init classes")
+        for ent in dataset_root:
+            print(ent)
+            if os.path.isdir(os.path.join(self.dataset_handler.datasetpath, ent)) and len(self.classes) < self.get_prop('classes.max'):
+                self.classes.append(ent)
+
+    def open(self, filename):
+        img = self.fileloader.open(filename)
+        target = os.path.split(filename)[-2] # get directory name which is at the same time also the class name
+        idx = self.classes.index(target)
+
+        target = np.zeros(len(self.classes), dtype='float32')
+        target[idx] = 1.0
+
+        if img is None:
+            return None
+
+        if self.properties['image.dimensions'][2] < 3:
+            # TODO: add channel remix down to two channels
+            try:
+                img = cv2.cvtColor(img, cv2.cv2.COLOR_BGR2GRAY)
+            except:
+                print()
+                return None, None
+        else:
+            pass
+
+            # resize to conv input size
+        img = cv2.resize(img, (self.properties['image.dimensions'][0], self.properties['image.dimensions'][1]))
+
+        # convert to floats between 0 and 1
+        img = np.asarray(img / 255., dtype='float32')
+
+        img = img.reshape(-1, self.properties['image.dimensions'][2], self.properties['image.dimensions'][1], self.properties['image.dimensions'][0])
+        target = target.reshape(-1, self.properties['classes.max'])
+
+        return img, target
+
+        
+dsh = DatasetDirectoryHandler('./dataset/')
+dsd = ImageDataset(dsh)
+for classf in dsd.classes:
+    fl = dsd.list(classf)
+    print(fl)
+    for file in fl:
+        img, target = dsd.open(os.path.join(classf, file))
+        print(target)
+
+exit()
 print(dsd.list('CNNBenchUtils'))
 
 sys.exit()
