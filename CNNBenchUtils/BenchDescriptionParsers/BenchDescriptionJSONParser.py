@@ -16,6 +16,10 @@ class BenchDescriptionJSONParser(BaseBenchDescriptionParser):
         self.bench_desc['runs'] = int(raw['runs'])
         self.bench_desc['cnns'] = {}
 
+        for rdataset in raw['datasets']:
+            dataset_name = rdataset['filename']
+            self.bench_desc['datasets'][dataset_name] = self.parse_dataset(rdataset)
+
         # self.bench_desc['selector'] = self.parse_selector(raw['param_change'])
 
         # if self.bench_desc['selector'] is None:
@@ -23,6 +27,7 @@ class BenchDescriptionJSONParser(BaseBenchDescriptionParser):
 
         for cnn in raw['cnn_configurations']:
             cnn_name = str(cnn['cnn_name'])
+
             self.bench_desc['cnns'][cnn_name] = {}
             self.bench_desc['cnns'][cnn_name]['selector'] = self.parse_selector(raw['param_change'])
             self.bench_desc['cnns'][cnn_name]['training'] = {}

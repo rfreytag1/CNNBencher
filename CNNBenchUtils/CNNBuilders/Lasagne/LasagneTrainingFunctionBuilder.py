@@ -93,4 +93,4 @@ class LasagneTrainingFunctionBuilder(BaseLasagneFunctionBuilder):
 
         self.func = theano.function([l.get_all_layers(self.net)[0].input_var, targets, lr_dynamic], loss, updates=param_updates)
 
-        return self.func, self.tensors
+        return self.func

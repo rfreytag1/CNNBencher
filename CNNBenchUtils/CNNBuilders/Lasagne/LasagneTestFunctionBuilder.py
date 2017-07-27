@@ -49,4 +49,4 @@ class LasagneTestFunctionBuilder(BaseLasagneFunctionBuilder):
 
         self.func = theano.function([l.get_all_layers(self.net)[0].input_var, targets], [net_output, loss, accuracy])
 
-        return self.func, self.tensors
+        return self.func

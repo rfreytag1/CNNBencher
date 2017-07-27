@@ -65,7 +65,6 @@ class BaseBenchDescriptionParser:
     def parse_dataset(self, dataset):
         dataset_file = dataset['filename']
         tmp_dataset = Dataset()
-        self.bench_desc['datasets'][dataset_file] = tmp_dataset
 
         tmp_dataset.set_prop('classes.max', dataset.get('classes', 20))
         tmp_dataset.set_prop('image.dimensions', dataset.get('image.dimensions', [128, 128, 1]))
@@ -77,8 +76,13 @@ class BaseBenchDescriptionParser:
             pass
         elif os.path.isdir(dataset_file):
             dataset_handler = DatasetDirectoryHandler(dataset_file)
+        else:
+            dataset_handler = DatasetDirectoryHandler(dataset_file)
 
-        tmp_dataset.dataset_handler(dataset_handler)
+        if dataset_handler is None:
+            return None
+
+        tmp_dataset.dataset_handler = dataset_handler
         tmp_dataset.init_classes()
         tmp_dataset.init_files()
 

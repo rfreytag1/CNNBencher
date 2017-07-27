@@ -90,4 +90,4 @@ class BaseLasagneFunctionBuilder(BaseFunctionBuilder):
         if self.tensors is None:
             self.tensors = {}
 
-        return None, None
+        return None

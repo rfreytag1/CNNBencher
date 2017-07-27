@@ -4,15 +4,10 @@
 	"runs": 5,	
 	"datasets": [
 		{
-			"filename": "test01.zip",
+			"filename": "./dataset",
 			"class.samples": 5000,
 			"classes": 20,
 			"image.dimensions": [512, 256, 1]
-		},
-		{
-			"filename": "test02.zip",
-			"sample_size": 10000,
-			"classes": 1600
 		}
 	],
 	"param_change": {

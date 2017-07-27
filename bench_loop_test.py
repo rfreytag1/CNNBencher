@@ -60,14 +60,21 @@ class ImageTargetLoader:
 
 
 class BatchImageTargetLoader:
-    def __init__(self, dataset=None, file_loader=None):
-        self.dataset = dataset
+    def __init__(self, file_loader=None):
+        self.dataset = file_loader.dataset
         self.batch_size = self.dataset.get_prop('batch.size')
-        self.image_target_loader = ImageTargetLoader(dataset, file_loader)
+        self.image_target_loader = ImageTargetLoader(self.dataset, file_loader)
+        self.files = self.dataset.sample_files
 
     def __get_chunk(self):
         for path_batch in range(0, len(self.dataset.sample_files), self.batch_size):
-            yield self.dataset.sample_files[path_batch:path_batch + self.batch_size]
+            yield self.files[path_batch:path_batch + self.batch_size]
+
+    def validate(self):
+        self.files = self.dataset.validation_files
+
+    def train(self):
+        self.files = self.dataset.sample_files
 
     def next_batch(self):
         for fp_chunk in self.__get_chunk():
@@ -102,7 +109,13 @@ class ThreadedBatchGenerator:
 
         self.producer_thread = threading.Thread(target=self.__batch_producer(), daemon=True)
 
-    def __batch_producer(self):
+    def __batch_producer(self, validate=None):
+        if validate is not None:
+            if validate is True:
+                self.batch_loader.validate()
+            else:
+                self.batch_loader.train()
+
         for item in self.batch_loader.next_batch():
             self.batch_queue.put(item)
         self.batch_queue.put(self.batch_end)
@@ -146,50 +159,65 @@ dsd = Dataset(dsh)
 cifl = cnndfh.CachedImageDatasetFileLoader(dsd)
 itl = ImageTargetLoader(dsd, cifl)
 
-bitl = BatchImageTargetLoader(dsd, cifl)
+bitl = BatchImageTargetLoader(cifl)
 tbg = ThreadedBatchGenerator(bitl)
 
 print("parsed", len(bench_desc['cnns']), "CNNs")
-for cnn, cnnc in bench_desc['cnns'].items():
-    print("Layers:", len(cnnc['layers']))
-    print("Dynamic Values:", len(cnnc['selector'].dynamic_values))
-    netbuilder = cnnb.LasagneCNNBuilder(cnnc)
-    # net = netbuilder.build(cnnc)
+print(bench_desc['datasets'])
+for dataset_name, dataset in bench_desc['datasets'].items():
+    cache_image_loader = cnndfh.CachedImageDatasetFileLoader(dataset)
+    batch_it_loader = BatchImageTargetLoader(cache_image_loader)
+    batch_generator = ThreadedBatchGenerator(batch_it_loader)
 
-    tensors = {}
-    train_func_builder = cnntrf.LasagneTrainingFunctionBuilder(None, cnnc['training']['function'])
-    test_func_builder = cnntef.LasagneTestFunctionBuilder(None, cnnc['training']['function'])
+    for cnn, cnnc in bench_desc['cnns'].items():
+        print("Layers:", len(cnnc['layers']))
+        print("Dynamic Values:", len(cnnc['selector'].dynamic_values))
+        netbuilder = cnnb.LasagneCNNBuilder(cnnc)
+        # net = netbuilder.build(cnnc)
 
-    for stage in range(0, bench_desc['stages']):
-        print("Stage", stage+1, "of", bench_desc['stages'])
-        cnnc['selector'].select_dvals(stage)
+        tensors = {}
+        train_func_builder = cnntrf.LasagneTrainingFunctionBuilder(None, cnnc['training']['function'])
+        test_func_builder = cnntef.LasagneTestFunctionBuilder(None, cnnc['training']['function'])
 
-        epochs = cnnc['training']['params']['epochs'].value(stage)
+        for stage in range(0, bench_desc['stages']):
+            print("Stage", stage+1, "of", bench_desc['stages'])
+            cnnc['selector'].select_dvals(stage)
 
-        net = netbuilder.build(stage=stage)
-        tensors.clear() # very important or else the functions will build with the wrong tensors(e.g. from previous builds)
-        train_func, tensors = train_func_builder.build(net, tensors, stage=stage)
-        test_func, tensors = test_func_builder.build(net, tensors, stage=stage)
+            epochs = cnnc['training']['params']['epochs'].value(stage)
 
-        for run in range(0, bench_desc['runs']):
-            print("Run", run+1, "of", bench_desc['runs'])
-            lr_interp = cnnc['training']['function']['params']['learning_rate.interp'].value(stage)
-            learning_rate = None
-            if lr_interp != 'none':
-                lr_start = float(cnnc['training']['function']['params']['learning_rate.start'].value(stage))
-                lr_end = float(cnnc['training']['function']['params']['learning_rate.end'].value(stage))
-                learning_rate = dvt.ValueLinear(lr_start, lr_end, epochs, True)
-            else:
-                lr_start = float(cnnc['training']['function']['params']['learning_rate.start'].value(stage))
-                learning_rate = dvt.ValueStatic(lr_start, epochs, True)
+            net = netbuilder.build(stage=stage)
+            tensors.clear() # very important or else the functions will build with the wrong tensors(e.g. from previous builds)
+            train_func = train_func_builder.build(net, tensors, stage=stage)
+            test_func = test_func_builder.build(net, tensors, stage=stage)
 
-            learning_rate.unlock()
+            for run in range(0, bench_desc['runs']):
+                print("Run", run+1, "of", bench_desc['runs'])
+                lr_interp = cnnc['training']['function']['params']['learning_rate.interp'].value(stage)
+                learning_rate = None
+                if lr_interp != 'none':
+                    lr_start = float(cnnc['training']['function']['params']['learning_rate.start'].value(stage))
+                    lr_end = float(cnnc['training']['function']['params']['learning_rate.end'].value(stage))
+                    learning_rate = dvt.ValueLinear(lr_start, lr_end, epochs, True)
+                else:
+                    lr_start = float(cnnc['training']['function']['params']['learning_rate.start'].value(stage))
+                    learning_rate = dvt.ValueStatic(lr_start, epochs, True)
 
-            for epoch in range(0, epochs):
-                print("Epoch", epoch+1, "of", epochs)
-                for image_batch, target_batch in tbg.batch():
-                    loss = train_func(image_batch, target_batch, learning_rate.value(stage))
-                # test_func...
+                learning_rate.unlock()
+
+                for epoch in range(0, epochs):
+                    print("Epoch", epoch+1, "of", epochs)
+                    for image_batch, target_batch in batch_generator.batch():
+                        loss = train_func(image_batch, target_batch, learning_rate.value(stage))
+                        print(loss)
+
+                    for image_batch, target_batch in batch_generator.batch(True):
+                        prediction_batch, loss, acc = test_func(image_batch, target_batch)
+
+                        print(prediction_batch)
+                        print(loss)
+                        print(acc)
+
+                    # test_func...
 
 
 #dataset = Dataset(bench_desc['datasets'][0]['filename'])

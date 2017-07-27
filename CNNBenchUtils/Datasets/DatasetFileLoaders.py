@@ -31,7 +31,7 @@ class CachedImageDatasetFileLoader(BaseDatasetFileLoader):
         if filename in CachedImageDatasetFileLoader.file_cache:
             cache_entry = CachedImageDatasetFileLoader.file_cache[filename]
             cache_entry['last_access'] = time.time()
-            return cache_entry
+            return cache_entry['file']
 
         # file = self.dataset.open(filename)
         src = self.dataset.dataset_handler.open(filename)
