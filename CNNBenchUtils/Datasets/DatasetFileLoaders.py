@@ -45,7 +45,7 @@ class CachedImageDatasetFileLoader(BaseDatasetFileLoader):
         if file is None:
             return None
 
-        if self.dataset.properties['image.dimensions'][2] < 3:
+        if (self.dataset.properties['image.dimensions'][2] < 3) and (len(file.shape) >= 3 and file.shape[2] >= 3):
             # TODO: add channel remix down to two channels
             try:
                 file = cv2.cvtColor(file, cv2.COLOR_BGR2GRAY)
@@ -55,7 +55,9 @@ class CachedImageDatasetFileLoader(BaseDatasetFileLoader):
         else:
             pass
 
+        # print(filename, "(pre-resize): ", file.shape, ",", file.dtype, ", resizing to", self.dataset.properties['image.dimensions'])
         file = cv2.resize(file, (self.dataset.properties['image.dimensions'][0], self.dataset.properties['image.dimensions'][1]))
+        # print(filename, "(post-resize): ", file.shape, ",", file.dtype)
 
         if len(CachedImageDatasetFileLoader.file_cache) >= self.max_cachesize:
             CachedImageDatasetFileLoader.file_cache.pop(self.__find_oldest_cache_entry())

@@ -27,107 +27,10 @@ TRAIN=[]
 # Credit: J. Schlüter (https://github.com/Lasagne/Lasagne/issues/12)
 
 
-class ImageTargetLoader:
-    def __init__(self, dataset=None, fileloader=None):
-        self.properties = {}
-        self.dataset = dataset
-        self.fileloader = None
-        if fileloader is not None and issubclass(type(fileloader), cnndfh.BaseDatasetFileLoader):
-            self.fileloader = fileloader
-
-    def open(self, filename):
-        img = self.fileloader.open(filename)
-        if img is None:
-            return None, None
-
-        target = os.path.split(os.path.split(filename)[0])[-1] # get directory name which is at the same time also the class name
-        try:
-            idx = self.dataset.classes.index(target)
-        except ValueError as e:
-            print("Loading File \"", filename, "\"!(", e, ")")
-            return None, None
-
-        target = np.zeros(len(self.dataset.classes), dtype='float32')
-        target[idx] = 1.0
-
-        # convert to floats between 0 and 1
-        img = np.asarray(img / 255., dtype='float32')
-
-        img = img.reshape(-1, self.dataset.properties['image.dimensions'][2], self.dataset.properties['image.dimensions'][1], self.dataset.properties['image.dimensions'][0])
-        target = target.reshape(-1, len(self.dataset.classes))
-
-        return img, target
 
 
-class BatchImageTargetLoader:
-    def __init__(self, file_loader=None):
-        self.dataset = file_loader.dataset
-        self.batch_size = self.dataset.get_prop('batch.size')
-        self.image_target_loader = ImageTargetLoader(self.dataset, file_loader)
-        self.files = self.dataset.sample_files
-
-    def __get_chunk(self):
-        for path_batch in range(0, len(self.dataset.sample_files), self.batch_size):
-            yield self.files[path_batch:path_batch + self.batch_size]
-
-    def validate(self):
-        self.files = self.dataset.validation_files
-
-    def train(self):
-        self.files = self.dataset.sample_files
-
-    def next_batch(self):
-        for fp_chunk in self.__get_chunk():
-            image_batch_buffer = np.zeros((self.dataset.properties['batch.size'],
-                                           self.dataset.properties['image.dimensions'][2],
-                                           self.dataset.properties['image.dimensions'][1],
-                                           self.dataset.properties['image.dimensions'][0]), dtype='float32')
-
-            target_batch_buffer = np.zeros((self.dataset.properties['batch.size'],
-                                            len(self.dataset.classes)), dtype='float32')
-
-            batch_num = 0
-            for file in fp_chunk:
-                image_buffer, target_buffer = self.image_target_loader.open(file)
-                if image_buffer is None:
-                    continue
-                image_batch_buffer[batch_num] = image_buffer
-                target_batch_buffer[batch_num] = target_buffer
-                batch_num += 1
-
-            image_batch_buffer = image_batch_buffer[:batch_num]
-            target_batch_buffer = target_batch_buffer[:batch_num]
-
-            yield image_batch_buffer, target_batch_buffer
 
 
-class ThreadedBatchGenerator:
-    def __init__(self, batch_loader):
-        self.batch_loader = batch_loader
-        self.batch_queue = queue.Queue(maxsize=batch_loader.dataset.get_prop('batch.size'))
-        self.batch_end = object()
-
-        self.producer_thread = threading.Thread(target=self.__batch_producer(), daemon=True)
-
-    def __batch_producer(self, validate=None):
-        if validate is not None:
-            if validate is True:
-                self.batch_loader.validate()
-            else:
-                self.batch_loader.train()
-
-        for item in self.batch_loader.next_batch():
-            self.batch_queue.put(item)
-        self.batch_queue.put(self.batch_end)
-
-    def batch(self):
-        self.producer_thread.start()
-        # run as consumer (read items from queue, in current thread)
-        item = self.batch_queue.get()
-        while item is not self.batch_end:
-            yield item
-            self.batch_queue.task_done()
-            item = self.batch_queue.get()
         
 '''
 for sample_file in dsd.sample_files:
@@ -154,20 +57,9 @@ default_log.warning("Tis' just a test!", {'lineno': 2})
 bdp = cnnbp.BenchDescriptionJSONParser(True)
 bench_desc = bdp.parse("./sample_cnn_bench1.json")
 
-dsh = cnndth.DatasetDirectoryHandler('./dataset/')
-dsd = Dataset(dsh)
-cifl = cnndfh.CachedImageDatasetFileLoader(dsd)
-itl = ImageTargetLoader(dsd, cifl)
-
-bitl = BatchImageTargetLoader(cifl)
-tbg = ThreadedBatchGenerator(bitl)
-
 print("parsed", len(bench_desc['cnns']), "CNNs")
-print(bench_desc['datasets'])
 for dataset_name, dataset in bench_desc['datasets'].items():
     cache_image_loader = cnndfh.CachedImageDatasetFileLoader(dataset)
-    batch_it_loader = BatchImageTargetLoader(cache_image_loader)
-    batch_generator = ThreadedBatchGenerator(batch_it_loader)
 
     for cnn, cnnc in bench_desc['cnns'].items():
         print("Layers:", len(cnnc['layers']))
@@ -184,6 +76,10 @@ for dataset_name, dataset in bench_desc['datasets'].items():
             cnnc['selector'].select_dvals(stage)
 
             epochs = cnnc['training']['params']['epochs'].value(stage)
+
+            dataset.set_prop('batch.size', cnnc['layers'][0]['params']['batch_size'].value(stage))
+            batch_it_loader = BatchImageTargetLoader(cache_image_loader)
+            batch_generator = ThreadedBatchGenerator(batch_it_loader)
 
             net = netbuilder.build(stage=stage)
             tensors.clear() # very important or else the functions will build with the wrong tensors(e.g. from previous builds)
