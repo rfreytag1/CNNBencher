@@ -29,7 +29,6 @@ class Dataset:
 
     def init_classes(self):
         dataset_root = self.dataset_handler.list(self.properties['dir.samples'])
-        print(dataset_root)
         for ent in dataset_root:
             if os.path.isdir(os.path.join(self.dataset_handler.datasetpath, ent)) and len(self.classes) < self.get_prop('classes.max'):
                 self.classes.append(os.path.split(ent)[-1])

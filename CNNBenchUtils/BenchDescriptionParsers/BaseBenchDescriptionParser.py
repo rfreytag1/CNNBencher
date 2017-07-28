@@ -88,7 +88,6 @@ class BaseBenchDescriptionParser:
 
         return tmp_dataset
 
-
     def parse_param(self, param, cnn_name):
         param_type = str(param['type']).lower()
         parse_func = self.param_parsers.get(param_type)
