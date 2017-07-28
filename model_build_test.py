@@ -11,6 +11,8 @@ import numpy as np
 import theano
 import theano.tensor as T
 
+# file mostly from Stefan Kahls BirdCLEF CNN https://github.com/kahst/BirdCLEF2017
+
 IM_DIM = 1
 IM_SIZE = [512,256]
 INIT_GAIN = 1.0
