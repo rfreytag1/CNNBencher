@@ -24,7 +24,6 @@ class CNNLasagneBenchmark:
         if logger is not None and isinstance(logger, logging.Logger):
             self.logger = logger
         else:
-            print(__name__)
             self.logger = logging.getLogger(__name__)
             self.logger.setLevel(logging.DEBUG)
             logger_filehandler = logging.FileHandler(os.path.join(self.base_dir, "benchmark.log"))
@@ -49,6 +48,8 @@ class CNNLasagneBenchmark:
         self.trainfunc_builder_class = LasagneTrainingFunctionBuilder.LasagneTrainingFunctionBuilder
         self.testfunc_builder_class = LasagneTestFunctionBuilder.LasagneTestFunctionBuilder
 
+        self.net_params_csv = None
+
     def open(self, description_file):
         self.description_file = description_file
         self.logger.info("trying to parse Benchmark Description...")
@@ -60,6 +61,36 @@ class CNNLasagneBenchmark:
                               len(self.benchmark_description['datasets']), len(self.benchmark_description['datasets']))
         else:
             self.logger.error("Could not parse Benchmark Description!")
+
+    def __create_net_param_table(self, current_net):
+        if self.net_params_csv is not None:
+            self.net_params_csv.close()
+            self.net_params_csv = None
+
+        self.net_params_csv = open(os.path.join(self.base_dir, "net_params.csv"), 'w+')
+        self.net_params_csv.write('stage;')
+        # get headings
+        layer_counter = {}
+        for layer in current_net['layers']:
+            layer_type = layer['type']
+            if layer_type not in layer_counter:
+                layer_counter[layer_type] = 0
+            for param in layer['params']:
+                self.net_params_csv.write(layer_type + str(layer_counter[layer_type]) + '.' + param + ';')
+            layer_counter[layer_type] += 1
+
+        self.net_params_csv.write("\n")
+        self.net_params_csv.flush()
+
+    def __dump_param_values(self, current_net, stage):
+        # get param values
+        self.net_params_csv.write(str(stage) + ';')
+        for layer in current_net['layers']:
+            for param_name, param in layer['params'].items():
+                self.net_params_csv.write(str(param) + ';')
+
+        self.net_params_csv.write("\n")
+        self.net_params_csv.flush()
 
     def run(self):
         for dataset_name, dataset in self.benchmark_description['datasets'].items():
@@ -77,9 +108,14 @@ class CNNLasagneBenchmark:
                 train_func_builder = self.trainfunc_builder_class(None, cnnc['training']['function'])
                 test_func_builder = self.testfunc_builder_class(None, cnnc['training']['function'])
 
+                self.__create_net_param_table(cnnc)
+
                 for stage in range(0, self.benchmark_description['stages']):
                     self.logger.info("Starting Stage %d of %d", stage + 1, self.benchmark_description['stages'])
                     cnnc['selector'].select_dvals(stage)
+
+                    self.__dump_param_values(cnnc, stage)
+
                     epochs = cnnc['training']['params']['epochs'].value(stage)
 
                     dataset.set_prop('batch.size', cnnc['layers'][0]['params']['batch_size'].value(stage))
