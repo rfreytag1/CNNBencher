@@ -10,6 +10,9 @@ from CNNBenchUtils.ValueSelectors.ValueSelectors import *
 
 
 class BenchDescription(dict):
+    '''
+    dummy class for benchmark description data structure.
+    '''
     def __init__(self):
         super(BenchDescription, self).__init__()
         self['name'] = ''
@@ -63,6 +66,11 @@ class BaseBenchDescriptionParser:
         self.selector_parsers[stype] = parser_func
 
     def parse_dataset(self, dataset):
+        '''
+        Tries to parse the dataset section and read the dataset file structure to get a file list and the class labels
+        :param dataset:
+        :return:
+        '''
         dataset_file = dataset['filename']
         tmp_dataset = Dataset()
 
@@ -89,32 +97,51 @@ class BaseBenchDescriptionParser:
         return tmp_dataset
 
     def parse_param(self, param, cnn_name):
+        '''
+        Tries to parse a parameter section
+        :param param: parameter section to parse
+        :param cnn_name: name of the CNN to associate the parse parameter with(important for selector)
+        :return: BaseValue derived instance or None on fail
+        '''
+        # get specified parameter type value string
         param_type = str(param['type']).lower()
+        # try to find an appropriate parser for the type specified
         parse_func = self.param_parsers.get(param_type)
 
         if parse_func is None or not callable(parse_func):
             return None
 
+        # call specific DynamicValue parser
         dval = parse_func(param, self.stages, self.gapless_dvalues)
 
         if dval is None:
             return None
 
+        # get preselection value
         pselected = param.get('selected')
 
         self.bench_desc['cnns'][cnn_name]['selector'].register_dval(dval)
         if isinstance(pselected, list):
+            # if the pre-selection value is a list, it's a list of stages in which it will be selected for change
             for stagenum in pselected:
                 self.bench_desc['cnns'][cnn_name]['selector'].preselect(dval, stagenum)
         elif isinstance(pselected, numbers.Number):
+            # if it's a number, it's just a single stage in which it's selected for change
             self.bench_desc['cnns'][cnn_name]['selector'].preselect(dval, pselected)
         elif isinstance(pselected, str):
+            # if it's a str, we handle it as a boolean and select it to be changed throughout all stages
+            # TODO: couldn't it actually be a boolean?
             if pselected.lower() == 'true':
                 self.bench_desc['cnns'][cnn_name]['selector'].preselect(dval)
 
         return dval
 
     def parse_selector(self, selector):
+        '''
+        Parse and initialize selector
+        :param selector: selector section
+        :return: BaseValueSelector derived instance or None on fail
+        '''
         selector_type = str(selector['selector'])
         parse_func = self.selector_parsers.get(selector_type)
 

@@ -9,10 +9,9 @@ import psutil
 import threading
 
 import CNNBenchUtils.Benchmark as CNNBench
-# Loading images with CPU background threads during GPU forward passes saves a lot of time
-# Credit: J. Schlüter (https://github.com/Lasagne/Lasagne/issues/12)
 
 
+# TODO: refactor HWLogger and move it to its own file/module
 class HWLogger(threading.Thread):
     def __init__(self, logfile=None, header=True):
         super(HWLogger, self).__init__()
@@ -99,7 +98,9 @@ default_log.info("test")
 
 cnnbench = CNNBench.CNNLasagneBenchmark("sample_cnn_bench1.json")
 hw_logger = HWLogger(os.path.join(cnnbench.base_dir, "hw_log.csv"))
+# start hw logger, which runs in another thread to properly log all HW activity in the background while the benchmark does what it does
 hw_logger.start()
+# start benchmark
 cnnbench.run()
 
 hw_logger.join()

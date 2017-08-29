@@ -1,4 +1,5 @@
 import sys
+import time
 
 import CNNBenchUtils.BenchDescriptionParsers.BenchDescriptionJSONParser as BenchDescriptionJSONParser
 import CNNBenchUtils.CNNBuilders.Lasagne.LasagneCNNBuilder as LasagneCNNBuilder
@@ -20,6 +21,9 @@ else:
     exit(1)
 
 print("Starting Build Test")
+
+start_time = time.perf_counter()
+
 errors = False
 for cnn, cnnc in benchmark_description['cnns'].items():
     print("Testing Neural Net Description \"", cnn, "\"")
@@ -56,6 +60,10 @@ for cnn, cnnc in benchmark_description['cnns'].items():
             errors = True
         else:
             print("success!")
+
+delta_time = time.perf_counter() - start_time
+
+print(delta_time)
 
 if not errors:
     print("JSON file seems valid!")

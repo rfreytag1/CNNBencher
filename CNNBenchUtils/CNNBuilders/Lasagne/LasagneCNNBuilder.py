@@ -39,8 +39,11 @@ class LasagneCNNBuilder(BaseCNNBuilder):
             return None
 
         layer = layer_builder(net, layer_desc, stage)
+        # if building was succesful, store each layer by itself for easy access
         if layer is not None:
             layer_name = layer_desc.get('name')
+            # if there is no name specified for the current layer, generate one
+            # by hashing the process time and appending the hash to the layer type string, e.g. conv_ea42deadbeef...
             if layer_name is None:
                 hobj = hashlib.sha1(time.process_time().hex().encode())
                 layer_name = layer_type + '_' + hobj.hexdigest()

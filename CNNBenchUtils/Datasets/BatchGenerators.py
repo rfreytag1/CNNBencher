@@ -1,6 +1,9 @@
 import queue
 import threading
 
+# Loading images with CPU background threads during GPU forward passes saves a lot of time
+# Credit: J. Schlüter (https://github.com/Lasagne/Lasagne/issues/12)
+
 
 class ThreadedBatchGenerator:
     def __init__(self, batch_loader):

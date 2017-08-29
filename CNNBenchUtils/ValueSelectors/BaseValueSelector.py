@@ -2,13 +2,29 @@ from CNNBenchUtils.DynamicValues.BaseValue import BaseValue
 
 
 class BaseValueSelector:
+    '''
+    Base class for selectors, which hold all dynamic values and select some(or all) each stage for a change
+    '''
     def __init__(self):
-        self.dynamic_values = [] # list of all registered dynamic values
-        self.locked_values = [] # list of currently locked dvalues
-        self.unlocked_values = [] # list of currently unlocked dvalues
+        # list of all registered dynamic values
+        self.dynamic_values = []
+        # list of currently locked dvalues
+        self.locked_values = []
+        # list of currently unlocked dvalues
+        self.unlocked_values = []
 
     @staticmethod
     def parse(selector):
+        '''
+        IMPLEMENT THIS!
+
+        This should parse the selector section of a description file.
+
+        This specifically is just a base function to be called by the actual implementation.
+
+        :param selector: section in which the selector is described as a dict
+        :return: hopefully a BaseValueSelector derived class instance
+        '''
         if not isinstance(selector, dict):
             raise TypeError('Parameter "selector" must be a dict!')
 
@@ -16,6 +32,11 @@ class BaseValueSelector:
 
     @staticmethod
     def shortname():
+        '''
+        return short name of itself.
+        This is used to identify the selector in a description file and call a parse function accordingly.
+        :return: short name of selector
+        '''
         return 'none'
 
     def register_dval(self, dval):
@@ -29,9 +50,19 @@ class BaseValueSelector:
             raise TypeError("dval must be BaseValue derived!")
 
     def preselect(self, dval, stage=-1):
+        '''
+        gives the option to select dynamic values for specific stages, disregarding the actual algorithm that usually selects dvals.
+        :param dval: dynamic value to pre-select
+        :param stage: in which stage to select it
+        :return:
+        '''
         pass
 
     def select_dvals(self, stage):
+        '''
+        Select the dynamic values which should update their values.
+        :param stage: for which stage to select the dvals
+        '''
         raise NotImplementedError()
 
     def lock_dval(self, dval):

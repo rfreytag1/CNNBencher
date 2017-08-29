@@ -1,6 +1,5 @@
 import math
 from CNNBenchUtils.DynamicValues.BaseValue import BaseValue
-# TODO: make stages static?
 
 
 class ValueStatic(BaseValue):

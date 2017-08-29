@@ -29,6 +29,8 @@ class BenchDescriptionJSONParser(BaseBenchDescriptionParser):
             cnn_name = str(cnn['cnn_name'])
 
             self.bench_desc['cnns'][cnn_name] = {}
+            # use the same selector for every neural net for now
+            # TODO: move selector section into the CNN sections to allow different selectors for every CNN
             self.bench_desc['cnns'][cnn_name]['selector'] = self.parse_selector(raw['param_change'])
             self.bench_desc['cnns'][cnn_name]['training'] = {}
             self.bench_desc['cnns'][cnn_name]['training']['params'] = {}
