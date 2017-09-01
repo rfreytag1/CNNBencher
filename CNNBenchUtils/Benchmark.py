@@ -108,9 +108,13 @@ class CNNLasagneBenchmark:
                 self.logger.error("Could not instantiate File Loader. Aborting...")
                 break
 
+            current_dataset_dir = os.path.join(self.base_dir, dataset_name)
+            os.mkdir(current_dataset_dir)
+
             for cnn, cnnc in self.benchmark_description['cnns'].items():
-                current_cnn_dir = os.path.join(self.base_dir, cnn)
+                current_cnn_dir = os.path.join(current_dataset_dir, cnn)
                 os.mkdir(current_cnn_dir)
+
                 self.logger.info("Benchmarking Neural Network \"%s\" with %d layers and %d Dynamic Values with Dataset %s.",
                                  cnn, len(cnnc['layers']), len(cnnc['selector'].dynamic_values), dataset_name)
                 netbuilder = self.netbuilder_class(cnnc)
@@ -161,8 +165,9 @@ class CNNLasagneBenchmark:
                         self.logger.error("Building Test Function for Neural Net \"%s\" in Stage %d failed!", cnn, stage)
                         break
 
-                    run_log = open(os.path.join(current_stage_dir, 'runs.csv'))
+                    run_log = open(os.path.join(current_stage_dir, 'runs.csv'), 'w+')
                     run_log.write("run;epoch;train.loss;train.time;train.lr;test.loss;test.accuracy\n")
+                    run_log.flush()
 
                     for run in range(0, self.benchmark_description['runs']):
                         # current_run_dir = os.path.join(current_stage_dir, 'run'+str(run))
@@ -196,6 +201,8 @@ class CNNLasagneBenchmark:
                             loss_avg = loss_avg / batches
                             run_log.write(str(loss_avg) + ';' + str(delta_time) + ';' + str(learning_rate.val) + ';')
 
+                            self.logger.info("Training finished after %ds", delta_time)
+
                             batch_it_loader.validate()
 
                             acc_avg = 0.0
@@ -214,6 +221,7 @@ class CNNLasagneBenchmark:
                             loss_avg = loss_avg / batches
 
                             run_log.write(str(loss_avg) + ';' + str(acc_avg) + '\n')
+                            run_log.flush()
 
                             # TODO: serialize current neural net
 
