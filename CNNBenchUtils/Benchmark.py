@@ -69,12 +69,12 @@ class CNNLasagneBenchmark:
         else:
             self.logger.error("Could not parse Benchmark Description!")
 
-    def __create_net_param_table(self, current_net):
+    def __create_net_param_table(self, net_name, current_net):
         if self.net_params_csv is not None:
             self.net_params_csv.close()
             self.net_params_csv = None
 
-        self.net_params_csv = open(os.path.join(self.base_dir, "net_params.csv"), 'w+')
+        self.net_params_csv = open(os.path.join(self.base_dir, "net_params_{0!s}.csv".format(net_name)), 'w+')
         self.net_params_csv.write('stage;')
         # get headings
         layer_counter = {}
@@ -120,9 +120,10 @@ class CNNLasagneBenchmark:
                 netbuilder = self.netbuilder_class(cnnc)
                 tensors = {}
                 train_func_builder = self.trainfunc_builder_class(None, cnnc['training']['function'])
+                # pretty much everything we need for the test function is also described by the training function block
                 test_func_builder = self.testfunc_builder_class(None, cnnc['training']['function'])
 
-                self.__create_net_param_table(cnnc)
+                self.__create_net_param_table(cnn, cnnc)
 
                 for stage in range(0, self.benchmark_description['stages']):
                     current_stage_dir = os.path.join(current_cnn_dir, 'stage'+str(stage))
@@ -139,9 +140,12 @@ class CNNLasagneBenchmark:
                     batch_generator = self.batch_generator_class(batch_it_loader)
 
                     self.logger.debug("Building Neural Network...")
+                    start_time = time.perf_counter()
                     net = netbuilder.build(stage=stage)
+                    # calculate time delta and multiply by 1000 to get milliseconds
+                    delta_time = (time.perf_counter() - start_time) * 1000
                     if net is not None:
-                        self.logger.debug("Neural Network complete!")
+                        self.logger.debug("Neural Network completed after %fms!", delta_time)
                     else:
                         self.logger.error("Buidling Neural Network \"%s\" for Stage %d failed!", cnn, stage)
                         break
@@ -197,11 +201,12 @@ class CNNLasagneBenchmark:
                                 loss_avg += loss
                                 batches += 1
 
-                            delta_time = time.perf_counter() - start_time
+                            # calculate time delta and multiply by 1000 to get milliseconds
+                            delta_time = (time.perf_counter() - start_time) * 1000
                             loss_avg = loss_avg / batches
                             run_log.write(str(loss_avg) + ';' + str(delta_time) + ';' + str(learning_rate.val) + ';')
 
-                            self.logger.info("Training finished after %ds", delta_time)
+                            self.logger.info("Training finished after %fms", delta_time)
 
                             batch_it_loader.validate()
 
