@@ -5,9 +5,9 @@
 	"datasets": [
 		{
 			"filename": "./dataset",
-			"class.samples": 5000,
-			"classes": 20,
-			"image.dimensions": [512, 256, 1]
+			"class.samples": 100,
+			"classes": 2,
+			"image.dimensions": [128, 128, 1]
 		}
 	],
 	"param_change": {

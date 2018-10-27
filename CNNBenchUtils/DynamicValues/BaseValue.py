@@ -102,3 +102,7 @@ class BaseValue:
 
     def is_locked(self):
         return self.locked
+
+    def reset(self):
+        self.current_stage = 0
+        self.next_stage = 1

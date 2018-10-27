@@ -96,7 +96,7 @@ lfh.setLevel(logging.DEBUG)
 default_log.addHandler(lfh)
 default_log.info("test")
 
-cnnbench = CNNBench.CNNLasagneBenchmark("sample_cnn_bench1.json")
+cnnbench = CNNBench.CNNLasagneBenchmark("sample_cnn_bench2.json")
 hw_logger = HWLogger(os.path.join(cnnbench.base_dir, "hw_log.csv"))
 # start hw logger, which runs in another thread to properly log all HW activity in the background while the benchmark does what it does
 hw_logger.start()

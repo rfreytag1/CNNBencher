@@ -58,6 +58,10 @@ class ValueStepped(BaseValue):
 
         return self.val
 
+    def reset(self):
+        super(ValueStepped, self).reset()
+        self.val = self.start
+
 
 class ValueSteppedInt(BaseValue):
     def __init__(self, start=0, end=1, step=1, stages=1, gapless=False):
@@ -96,6 +100,10 @@ class ValueSteppedInt(BaseValue):
 
         return self.val
 
+    def reset(self):
+        super(ValueSteppedInt, self).reset()
+        self.val = int(self.start)
+
 
 class ValueLinear(BaseValue):
     def __init__(self, start=0.0, end=1.0, stages=1, gapless=False):
@@ -133,6 +141,10 @@ class ValueLinear(BaseValue):
         self.val = self.start * (1.0 - frac) + self.end * frac  # standard lerp
         return self.val
 
+    def reset(self):
+        super(ValueLinear, self).reset()
+        self.val = self.start
+
 
 class ValueCosine(BaseValue):
     def __init__(self, start=0.0, end=1.0, stages=1, gapless=False):
@@ -157,7 +169,7 @@ class ValueCosine(BaseValue):
         if self.is_locked():
             return self.val
 
-        stage = self.actual_stage()
+        stage = self.actual_stage(stage)
 
         if stage >= self.stages:
             return self.end
@@ -166,6 +178,10 @@ class ValueCosine(BaseValue):
         cfac = (1 - math.cos(frac * math.pi)) / 2.0
         self.val = self.start * (1.0 - cfac) + self.end * cfac  # standard cosine interp
         return self.val
+
+    def reset(self):
+        super(ValueCosine, self).reset()
+        self.val = self.start
 
 
 class ValueMulti(BaseValue):
@@ -204,6 +220,13 @@ class ValueMulti(BaseValue):
         self.val = self.values[int(idx)]
         return self.val
 
+    def reset(self):
+        super(ValueMulti, self).reset()
+        if isinstance(self.values, list):
+            self.val = self.values[0]
+        else:
+            self.val = None
+
 
 class ValueMultiRR(BaseValue):
     def __init__(self, values=None, stages=0, gapless=False):
@@ -239,3 +262,10 @@ class ValueMultiRR(BaseValue):
         idx = stage % len(self.values)
         self.val = self.values[idx]
         return self.val
+
+    def reset(self):
+        super(ValueMultiRR, self).reset()
+        if isinstance(self.values, list):
+            self.val = self.values[0]
+        else:
+            self.val = None

@@ -1,3 +1,5 @@
+import random
+
 from CNNBenchUtils.ValueSelectors.BaseValueSelector import BaseValueSelector
 from CNNBenchUtils.DynamicValues.BaseValue import BaseValue
 

@@ -11,8 +11,6 @@ class ThreadedBatchGenerator:
         self.batch_queue = queue.Queue(maxsize=batch_loader.file_loader.max_cachesize)
         self.batch_end = object()
 
-        self.producer_thread = threading.Thread(target=self.__batch_producer(), daemon=True)
-
     def __batch_producer(self, validate=None):
         if validate is not None:
             if validate is True:
@@ -25,6 +23,7 @@ class ThreadedBatchGenerator:
         self.batch_queue.put(self.batch_end)
 
     def batch(self):
+        self.producer_thread = threading.Thread(target=self.__batch_producer(), daemon=True)
         self.producer_thread.start()
         # run as consumer (read items from queue, in current thread)
         item = self.batch_queue.get()

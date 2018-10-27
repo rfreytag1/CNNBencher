@@ -91,3 +91,6 @@ class BaseValueSelector:
         self.unlocked_values.extend(self.dynamic_values)
         self.locked_values.clear()
 
+    def reset_all(self):
+        for dval in self.dynamic_values:
+            dval.reset()

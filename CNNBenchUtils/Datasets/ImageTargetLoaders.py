@@ -45,7 +45,7 @@ class BatchImageTargetLoader:
         self.files = self.dataset.sample_files
 
     def __get_chunk(self):
-        for path_batch in range(0, len(self.dataset.sample_files), self.batch_size):
+        for path_batch in range(0, len(self.files), self.batch_size):
             yield self.files[path_batch:path_batch + self.batch_size]
 
     def validate(self):

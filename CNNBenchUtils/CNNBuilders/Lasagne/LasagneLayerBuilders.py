@@ -11,7 +11,7 @@ class LasagneInputLayerBuilder(BaseLasagneLayerBuilder):
         height = LasagneInputLayerBuilder.getdval_int(layer['params'].get('height'), stage, 16)
         depth = LasagneInputLayerBuilder.getdval_int(layer['params'].get('depth'), stage, 1)
 
-        return l.InputLayer((batch_size, depth, height, width))
+        return l.InputLayer((None, depth, height, width))
 
 
 class LasagneConvLayerBuilder(BaseLasagneLayerBuilder):
